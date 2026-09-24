@@ -11,6 +11,8 @@
 
     "shutdownAction": "stopCompose",
 
+    "postCreateCommand": "cd /workspace/app && npm ci",
+
     "customizations":{
         "vscode":{
             "extensions": [
