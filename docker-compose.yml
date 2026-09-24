@@ -1,0 +1,24 @@
+services:
+  mobile-dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+
+    image: mobile-dev
+    container_name: mobile-development
+
+    working_dir: /workspace
+
+    volumes:
+      - .:/workspace  #MONTA TODO EL DIRECTORIO 
+    ports: 
+      #expo
+      - "8081:8081"
+
+    environment:
+      - NODE_ENV=development
+    
+    stdin_open: true
+    tty: true
+
+    command: sleep infinity

@@ -1,0 +1,29 @@
+{
+    "name": "Mobile Development - React Native",
+
+    "dockerComposeFile": "../docker-compose.yml",
+    
+    "service": "mobile-dev",
+
+    "workspaceFolder": "/workspace",
+    
+    "remoteUser": "node",
+
+    "shutdownAction": "stopCompose",
+
+    "customizations":{
+        "vscode":{
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "ms-azuretools.vscode-containers",
+                "eamodio.gitlens"
+            ],
+            "settings": {
+                "editor.formatOnSave": true,
+                "terminal.integrated.defaultProfile.linux": "bash"
+            }
+        }
+
+    }
+}
