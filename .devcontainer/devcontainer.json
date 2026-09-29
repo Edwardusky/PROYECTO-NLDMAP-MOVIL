@@ -23,7 +23,8 @@
             ],
             "settings": {
                 "editor.formatOnSave": true,
-                "terminal.integrated.defaultProfile.linux": "bash"
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "terminal.integrated.cwd": "${workspaceFolder}/app"
             }
         }
 
