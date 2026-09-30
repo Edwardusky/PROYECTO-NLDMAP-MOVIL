@@ -1,5 +1,6 @@
 import { Camera, GeoJSONSource, Layer, Map, type LngLat } from '@maplibre/maplibre-react-native';
 import { useState } from 'react';
+import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,17 +21,33 @@ export default function MapPrototype() {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.title}>NLDMAP</Text>
+        <View style={styles.topRow}>
+          <Text accessibilityRole="header" style={styles.title}>NLDMAP</Text>
+          <View style={styles.topActions}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Capas y relieve. Relieve pendiente de configurar"
+              onPress={() => setPanel('relief')} style={({ pressed }) => [styles.topButton, pressed && styles.pressed]}>
+              <SymbolView name={{ ios: 'square.3.layers.3d', android: 'layers' }} size={22} tintColor="#173D3A" />
+              <Text style={styles.controlText}>Capas</Text>
+            </Pressable>
+            {/* No authentication provider exists yet: always open the signed-out screen. */}
+            <Pressable accessibilityRole="button" accessibilityLabel="Perfil. Abrir Iniciar sesión"
+              onPress={() => router.push('/login')} style={({ pressed }) => [styles.topButton, pressed && styles.pressed]}>
+              <SymbolView name={{ ios: 'person.crop.circle', android: 'person' }} size={22} tintColor="#173D3A" />
+              <Text style={styles.controlText}>Perfil</Text>
+            </Pressable>
+          </View>
+        </View>
         <Text style={styles.body}>Tlaxcala · Encuadre inicial provisional</Text>
         <Text style={styles.caption}>No es tu ubicación</Text>
       </View>
       <View style={styles.viewport}>
         <Map style={StyleSheet.absoluteFill} mapStyle={MAP_STYLE} attribution
+          compass compassPosition={{ top: 12, right: 12 }}
           onDidFailLoadingMap={() => setMapFailed(true)}
           onDidFinishLoadingMap={() => setMapFailed(false)}
-          onPress={(event) => setDraftCoordinate(event.nativeEvent.lngLat)}>
+          onPress={(event) => { if (panel === null) setDraftCoordinate(event.nativeEvent.lngLat); }}>
           <Camera initialViewState={INITIAL_VIEW} />
           {/* Only existing country geometry. This source has no state boundaries. */}
           <Layer id="country-outline-contrast" type="line" source="maplibre"
@@ -52,7 +69,6 @@ export default function MapPrototype() {
           {([
             ['cases', { ios: 'line.3.horizontal.decrease', android: 'filter_list' }, 'Casos', `${caseStatuses.length}/2`],
             ['events', { ios: 'eye', android: 'visibility' }, 'Eventos', showSightings ? 'Activa' : 'Oculta'],
-            ['relief', { ios: 'mountain.2', android: 'terrain' }, 'Relieve', 'Pendiente'],
           ] as const).map(([id, icon, label, value]) => (
             <Pressable key={id} accessibilityRole="button" accessibilityLabel={`${label}: ${value}. Abrir opciones`}
               onPress={() => setPanel(id)} style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
@@ -90,12 +106,17 @@ export default function MapPrototype() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F7F9F6' },
   header: { paddingHorizontal: 16, paddingVertical: 8, gap: 2 },
-  title: { color: '#173D3A', fontSize: 21, fontWeight: '800' },
+  topRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  topActions: { flexDirection: 'row', gap: 8 },
+  topButton: { minWidth: 56, minHeight: 48, alignItems: 'center', justifyContent: 'center', padding: 6, gap: 2,
+    borderRadius: 12, backgroundColor: '#E8EEE7' },
+  title: { color: '#173D3A', fontSize: 21, fontWeight: '800', flexShrink: 1 },
   body: { color: '#52675E', fontSize: 12, lineHeight: 18 },
   caption: { color: '#52675E', fontSize: 11, lineHeight: 16 },
   viewport: { flex: 1, overflow: 'hidden', backgroundColor: '#DDE9E5' },
-  rail: { position: 'absolute', top: 12, right: 12, bottom: 48, maxWidth: '42%' },
-  controls: { gap: 8 },
+  // Separate clear zones for the compass (top) and attribution (bottom).
+  rail: { position: 'absolute', top: 64, right: 12, bottom: 48, maxWidth: '42%' },
+  controls: { gap: 8, flexGrow: 1, justifyContent: 'flex-end' },
   control: { minWidth: 76, minHeight: 64, padding: 8, borderRadius: 16, alignItems: 'center',
     backgroundColor: '#F7F9F6', borderWidth: 1, borderColor: '#D8E1D9' },
   controlText: { color: '#173D3A', fontSize: 13, fontWeight: '700' },
