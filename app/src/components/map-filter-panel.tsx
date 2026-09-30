@@ -29,7 +29,7 @@ export function MapFilterPanel({ panel, onClose, caseStatuses, onToggleCase, sho
           </View>
           <ScrollView contentContainerStyle={styles.content}>
             {panel === 'cases' && <>
-              <Text style={styles.body}>Elige los estados que quieres ver cuando haya casos disponibles.</Text>
+              <Text style={styles.body}>Filtra los casos ficticios de esta demostración por su estado.</Text>
               {CASE_STATUSES.map((status) => (
                 <Pressable key={status} accessibilityRole="checkbox" accessibilityState={{ checked: caseStatuses.includes(status) }}
                   onPress={() => onToggleCase(status)} style={styles.option}>
@@ -55,8 +55,8 @@ export function MapFilterPanel({ panel, onClose, caseStatuses, onToggleCase, sho
               <Text style={styles.body}>El mapa de demostración solo contiene límites de países. Acercarlo no añade límites estatales o municipales.</Text>
             </>}
             {panel !== 'relief' && <View style={styles.notice}>
-              <Text style={styles.label}>Sin reportes cargados</Text>
-              <Text style={styles.body}>Estos controles solo conservan tu selección durante esta sesión. Los datos aparecerán al conectar la API.</Text>
+              <Text style={styles.label}>Modo demostración</Text>
+              <Text style={styles.body}>Solo hay casos ficticios locales. No hay avistamientos de ejemplo ni reportes conectados a la API. Tu selección se conserva en memoria.</Text>
             </View>}
           </ScrollView>
         </SafeAreaView>

@@ -17,6 +17,8 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Iniciar sesión' }} />
         <Stack.Screen name="profile" options={{ title: 'Perfil' }} />
+        <Stack.Screen name="create-report" options={{ title: 'Crear reporte' }} />
+        <Stack.Screen name="case-detail" options={{ title: 'Detalle · Demostración' }} />
       </Stack>
     </ThemeProvider>
   );
