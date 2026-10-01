@@ -9,7 +9,6 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           <Text style={styles.heading}>Acceso a NLDMAP</Text>
           <Text style={styles.body}>El acceso y el perfil estarán disponibles cuando se integre la autenticación.</Text>
-          <Text style={styles.body}>Este prototipo no inicia sesión ni guarda información personal.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

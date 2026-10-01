@@ -20,4 +20,7 @@ export const DEMO_CASES: DemoCase[] = [
     municipality: 'Apizaco', date: '2026-09-02', coordinates: [-98.14, 19.41] },
   { id: 'demo-gamma', name: 'Persona ficticia Gamma', age: 35, status: 'En búsqueda',
     municipality: 'Chiautempan', date: '2026-09-03', coordinates: [-98.18, 19.31] },
+  // Independent case at exactly Alfa's location; different ID and status.
+  { id: 'demo-delta', name: 'Persona ficticia Delta', age: 52, status: 'Localizados',
+    municipality: 'Tlaxcala', date: '2026-09-04', coordinates: [-98.24, 19.32] },
 ];

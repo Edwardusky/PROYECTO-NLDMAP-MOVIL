@@ -6,14 +6,12 @@ type Props = {
   viewport: { width: number; height: number };
   title: string;
   children: ReactNode;
-  action: string;
-  onAction: () => void;
   onClose: () => void;
 };
 
 // Rightmost 112px belong to the controls; bottom 48px to map attribution.
 // This is a sibling of Map inside its clipped viewport, never a native Marker child.
-export function MapSelectionPopup({ point, viewport, title, children, action, onAction, onClose }: Props) {
+export function MapSelectionPopup({ point, viewport, title, children, onClose }: Props) {
   const [height, setHeight] = useState(200);
   const width = Math.min(260, viewport.width - 128);
   const maxHeight = viewport.height - 64;
@@ -40,9 +38,6 @@ export function MapSelectionPopup({ point, viewport, title, children, action, on
           onPress={onClose} style={styles.close}><Text style={styles.label}>Cerrar ×</Text></Pressable>
         <Text accessibilityRole="header" style={styles.title}>{title}</Text>
         {children}
-        <Pressable accessibilityRole="button" onPress={onAction} style={styles.action}>
-          <Text style={styles.actionText}>{action}</Text>
-        </Pressable>
       </ScrollView>
     </View>
   </>;
@@ -56,6 +51,4 @@ const styles = StyleSheet.create({
   close: { minHeight: 44, paddingHorizontal: 4, justifyContent: 'center', alignSelf: 'flex-end' },
   label: { color: '#173D3A', fontSize: 13, fontWeight: '600' },
   title: { color: '#173D3A', fontSize: 15, fontWeight: '700' },
-  action: { minHeight: 48, padding: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: '#173D3A', borderRadius: 10 },
-  actionText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', textAlign: 'center' },
 });
