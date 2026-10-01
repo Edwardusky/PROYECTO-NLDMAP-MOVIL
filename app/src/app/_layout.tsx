@@ -16,6 +16,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerTintColor: '#173D3A', headerStyle: { backgroundColor: '#F7F9F6' }, contentStyle: { backgroundColor: '#F7F9F6' } }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Iniciar sesión' }} />
+        <Stack.Screen name="register" options={{ title: 'Crear cuenta' }} />
         <Stack.Screen name="profile" options={{ title: 'Perfil' }} />
         <Stack.Screen name="create-report" options={{ title: 'Crear reporte' }} />
         <Stack.Screen name="case-detail" options={{ title: 'Detalle · Demostración' }} />
