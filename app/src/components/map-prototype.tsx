@@ -1,7 +1,7 @@
 import { Camera, GeoJSONSource, Layer, Map, type LngLat, type MapRef } from '@maplibre/maplibre-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -111,7 +111,7 @@ export default function MapPrototype() {
             {/* No authentication provider exists yet: always open the signed-out screen. */}
             <Pressable accessibilityRole="button" accessibilityLabel="Perfil. Abrir Iniciar sesión"
               onPress={() => { cancelSelection(); router.push('/login'); }} style={({ pressed }) => [styles.topButton, pressed && styles.pressed]}>
-              <SymbolView name={{ ios: 'person.crop.circle', android: 'person' }} size={22} tintColor="#173D3A" />
+              <Ionicons name="person-circle-outline" size={22} color="#173D3A" style={{ width: 22, height: 22 }} accessible={false} accessibilityElementsHidden importantForAccessibility="no" />
               <Text style={styles.controlText}>Perfil</Text>
             </Pressable>
           </View>
@@ -178,13 +178,13 @@ export default function MapPrototype() {
         <ScrollView style={[styles.rail, { top: Math.max(viewport.height * 0.45, northTop + 72) }]}
           contentContainerStyle={styles.controls} showsVerticalScrollIndicator={false}>
           {([
-            ['relief', { ios: 'square.3.layers.3d', android: 'layers' }, 'Capas', 'Pendiente'],
-            ['cases', { ios: 'line.3.horizontal.decrease', android: 'filter_list' }, 'Casos', `${caseStatuses.length}/2`],
-            ['events', { ios: 'eye', android: 'visibility' }, 'Eventos', showSightings ? 'Activa' : 'Oculta'],
+            ['relief', 'layers-outline', 'Capas', 'Pendiente'],
+            ['cases', 'filter-outline', 'Casos', `${caseStatuses.length}/2`],
+            ['events', 'eye-outline', 'Eventos', showSightings ? 'Activa' : 'Oculta'],
           ] as const).map(([id, icon, label, value]) => (
             <Pressable key={id} accessibilityRole="button" accessibilityLabel={`${label}: ${value}. Abrir opciones`}
               onPress={() => setPanel(id)} style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
-              <SymbolView name={icon} size={22} tintColor="#173D3A" />
+              <Ionicons name={icon} size={22} color="#173D3A" style={{ width: 22, height: 22 }} accessible={false} accessibilityElementsHidden importantForAccessibility="no" />
               <Text style={styles.controlText}>{label}</Text>
               <Text style={styles.caption}>{value}</Text>
             </Pressable>

@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -35,7 +36,7 @@ export function MapSelectionPopup({ point, viewport, title, children, onClose }:
       onStartShouldSetResponder={() => true}>
       <ScrollView contentContainerStyle={styles.content}>
         <Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana del marcador"
-          onPress={onClose} style={styles.close}><Text style={styles.label}>Cerrar ×</Text></Pressable>
+          onPress={onClose} style={styles.close}><Text style={styles.label}>Cerrar <Ionicons name="close-outline" size={13} color="#173D3A" accessible={false} accessibilityElementsHidden importantForAccessibility="no" /></Text></Pressable>
         <Text accessibilityRole="header" style={styles.title}>{title}</Text>
         {children}
       </ScrollView>
