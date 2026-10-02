@@ -1,25 +1,35 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, View } from 'react-native';
+import { Action, Field, FormScreen, formStyles as s } from '@/components/form-controls';
+import { LocalPhotoPicker } from '@/components/local-photo-picker';
+import { useLocalDraft } from '@/state/local-draft-context';
+import { emailValid, phoneValid, type Profile } from '@/data/local-draft';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
-  return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text accessibilityRole="header" style={styles.title}>Perfil</Text>
-        <View style={styles.card}>
-          <Text style={styles.heading}>Acceso a NLDMAP</Text>
-          <Text style={styles.body}>El acceso y el perfil estarán disponibles cuando se integre la autenticación.</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  const { profile, setProfile } = useLocalDraft();
+  function field(key: Exclude<keyof Profile, 'photo'>, label: string, keyboardType: 'default' | 'email-address' | 'phone-pad' | 'number-pad' = 'default') {
+    const error = key === 'email' && profile.email && !emailValid(profile.email) ? 'Escribe un correo válido.'
+      : key === 'phone' && profile.phone && !phoneValid(profile.phone) ? 'Escribe un teléfono válido de 7 a 15 dígitos.' : undefined;
+    return <Field key={key} label={label} value={profile[key]} onChangeText={value => setProfile(current => ({ ...current, [key]: value }))}
+      keyboardType={keyboardType} autoCapitalize={key === 'email' ? 'none' : 'sentences'} error={error || undefined} />;
+  }
+  return <FormScreen>
+    <Text accessibilityRole="header" style={s.title}>Vista previa de perfil</Text>
+    <Text style={s.body}>Sin sesión iniciada. Puedes editar estos datos durante esta sesión de la app; se perderán al cerrarla. Todos los campos son opcionales.</Text>
+    <LocalPhotoPicker label="Foto de perfil" uri={profile.photo} onChange={photo => setProfile(current => ({ ...current, photo }))} />
+    <View style={s.card}>
+      <Text accessibilityRole="header" style={s.heading}>Contacto privado</Text>
+      {field('firstName', 'Nombre')}{field('lastName', 'Apellidos')}
+      {field('email', 'Correo', 'email-address')}{field('phone', 'Teléfono', 'phone-pad')}
+      {field('social', 'Redes sociales de contacto')}
+      <Text style={s.body}>Estos datos no aparecen en las fichas públicas del mapa.</Text>
+    </View>
+    <View style={s.card}>
+      <Text accessibilityRole="header" style={s.heading}>Domicilio de contacto · Opcional</Text>
+      {field('state', 'Estado')}{field('municipality', 'Municipio')}{field('locality', 'Localidad o colonia')}
+      {field('postalCode', 'Código postal', 'number-pad')}{field('street', 'Calle y número')}{field('reference', 'Referencias')}
+    </View>
+    <Action secondary label="Iniciar sesión" onPress={() => router.navigate('/login')} />
+    <Action secondary label="Volver al mapa" onPress={() => router.dismissTo('/')} />
+  </FormScreen>;
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F7F9F6' },
-  content: { padding: 20, gap: 20 },
-  title: { color: '#173D3A', fontSize: 26, fontWeight: '800' },
-  card: { padding: 20, borderRadius: 20, backgroundColor: '#E8EEE7', gap: 12 },
-  heading: { color: '#173D3A', fontSize: 18, fontWeight: '700' },
-  body: { color: '#52675E', fontSize: 15, lineHeight: 24 },
-});

@@ -1,5 +1,5 @@
 import { useHeaderHeight } from 'expo-router/react-navigation';
-import { Link, router, useFocusEffect } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -49,12 +49,12 @@ export default function AuthForm({ registering = false }: { registering?: boolea
     Keyboard.dismiss();
     setValues((current) => ({ ...current, password: '' }));
     setVisible(false);
-    setNotice('La autenticación todavía no está conectada. No se ha creado una cuenta ni iniciado sesión.');
+    setNotice('Función no disponible');
   }
 
-  function pendingOAuth(provider: string) {
+  function pendingOAuth() {
     Keyboard.dismiss();
-    setNotice(`La autenticación con ${provider} estará disponible después. No se ha iniciado sesión.`);
+    setNotice('Función no disponible');
   }
 
   return (
@@ -62,7 +62,6 @@ export default function AuthForm({ registering = false }: { registering?: boolea
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={headerHeight}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets={false}>
           <Text accessibilityRole="header" style={styles.title}>{registering ? 'Crear cuenta' : 'Iniciar sesión'}</Text>
-          <Text style={styles.body}>Puedes volver al mapa sin iniciar sesión. El acceso todavía no está conectado.</Text>
           <View style={styles.card}>
             {fields.map((field, index) => {
               const password = field === 'password';
@@ -102,12 +101,12 @@ export default function AuthForm({ registering = false }: { registering?: boolea
               <Text style={styles.buttonText}>{registering ? 'Crear cuenta' : 'Iniciar sesión'}</Text>
             </Pressable>
             {notice && <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.body}>{notice}</Text>}
-            <Pressable accessibilityRole="button" accessibilityHint="Autenticación pendiente" onPress={() => pendingOAuth('Google')}
+            <Pressable accessibilityRole="button" accessibilityLabel="Continuar con Google" onPress={pendingOAuth}
               style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
               <Text style={styles.buttonText}>Continuar con Google</Text>
             </Pressable>
-            {Platform.OS === 'ios' && <Pressable accessibilityRole="button" accessibilityHint="Autenticación pendiente"
-              onPress={() => pendingOAuth('Apple')} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
+            {Platform.OS === 'ios' && <Pressable accessibilityRole="button" accessibilityLabel="Continuar con Apple"
+              onPress={pendingOAuth} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
               <Text style={styles.buttonText}>Continuar con Apple</Text>
             </Pressable>}
           </View>
@@ -116,9 +115,6 @@ export default function AuthForm({ registering = false }: { registering?: boolea
               <Text style={styles.linkText}>{registering ? '¿Ya tienes cuenta? Iniciar sesión' : '¿No tienes cuenta? Crear cuenta'}</Text>
             </Pressable>
           </Link>
-          <Pressable accessibilityRole="button" onPress={() => router.dismissTo('/')} style={styles.button}>
-            <Text style={styles.buttonText}>Volver al mapa sin iniciar sesión</Text>
-          </Pressable>
           {!registering && <Link href="/profile" asChild>
             <Pressable accessibilityRole="link" style={styles.link}><Text style={styles.linkText}>Ver información del perfil</Text></Pressable>
           </Link>}

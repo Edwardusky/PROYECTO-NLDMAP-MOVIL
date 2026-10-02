@@ -35,151 +35,147 @@ export function MapFilterPanel({
       ? "Estados de caso"
       : panel === "events"
         ? "Capa de eventos"
-        : "Relieve";
+        : "Capas";
   return (
     <Modal
       visible={panel !== null}
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      supportedOrientations={['portrait', 'landscape']}
     >
-      <View style={styles.overlay}>
+      <SafeAreaProvider style={styles.overlay}>
         <Pressable
           style={StyleSheet.absoluteFill}
           accessibilityRole="button"
           accessibilityLabel="Cerrar panel de filtros"
           onPress={onClose}
         />
-        <SafeAreaView
-          style={styles.panel}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.heading}>
-            <Text accessibilityRole="header" style={styles.title}>
-              {title}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Cerrar panel"
-              onPress={onClose}
-              style={styles.close}
-            >
-              <Text style={styles.label}>
-                Cerrar{" "}
-                <Ionicons
-                  name="close-outline"
-                  size={15}
-                  color="#173D3A"
-                  accessible={false}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
-                />
-              </Text>
-            </Pressable>
-          </View>
-          <ScrollView contentContainerStyle={styles.content}>
-            {panel === "cases" && (
-              <>
-                <Text style={styles.body}>
-                  Filtra los casos ficticios de esta demostración por su estado.
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']} pointerEvents="box-none">
+          <View
+            style={styles.panel}
+            accessibilityViewIsModal
+            onAccessibilityEscape={onClose}
+          >
+            <ScrollView contentContainerStyle={styles.content}>
+              <View style={styles.heading}>
+                <Text accessibilityRole="header" style={styles.title}>
+                  {title}
                 </Text>
-                {CASE_STATUSES.map((status) => (
-                  <Pressable
-                    key={status}
-                    accessibilityRole="checkbox"
-                    accessibilityLabel={status}
-                    accessibilityState={{
-                      checked: caseStatuses.includes(status),
-                    }}
-                    onPress={() => onToggleCase(status)}
-                    style={styles.option}
-                  >
-                    <Text style={styles.label}>{status}</Text>
-                    <Text accessible={false} style={styles.label}>
-                      <Ionicons
-                        name={
-                          caseStatuses.includes(status)
-                            ? "checkbox-outline"
-                            : "square-outline"
-                        }
-                        size={15}
-                        color="#173D3A"
-                        accessible={false}
-                        accessibilityElementsHidden
-                        importantForAccessibility="no"
-                      />
-                    </Text>
-                  </Pressable>
-                ))}
-              </>
-            )}
-            {panel === "events" && (
-              <>
-                <Text style={styles.body}>
-                  Los avistamientos son eventos independientes del estado de un
-                  caso.
-                </Text>
-                <View style={styles.option}>
-                  <Text style={[styles.label, styles.flex]}>Avistamientos</Text>
-                  <Switch
-                    accessibilityLabel="Mostrar capa de avistamientos"
-                    value={showSightings}
-                    onValueChange={onToggleSightings}
-                    trackColor={{ true: "#173D3A" }}
-                  />
-                </View>
-              </>
-            )}
-            {panel === "relief" && (
-              <>
-                <View style={styles.option}>
-                  <Text style={[styles.label, styles.flex]}>
-                    Sombreado del terreno
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Cerrar panel"
+                  onPress={onClose}
+                  style={styles.close}
+                >
+                  <Text style={styles.label}>
+                    Cerrar{" "}
+                    <Ionicons
+                      name="close-outline"
+                      size={15}
+                      color="#173D3A"
+                      accessible={false}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                    />
                   </Text>
-                  <Switch
-                    accessibilityLabel="Relieve pendiente de configurar"
-                    disabled
-                    value={false}
-                  />
-                </View>
-                <Text style={styles.body}>
-                  Disponible al configurar una fuente de elevación con
-                  condiciones de uso adecuadas para esta app. Por ahora está
-                  desactivado.
-                </Text>
-                <Text style={styles.body}>
-                  El mapa de demostración solo contiene límites de países.
-                  Acercarlo no añade límites estatales o municipales.
-                </Text>
-              </>
-            )}
-            {panel !== "relief" && (
-              <View style={styles.notice}>
-                <Text style={styles.label}>Modo demostración</Text>
-                <Text style={styles.body}>
-                  Solo hay casos ficticios locales. No hay avistamientos de
-                  ejemplo ni reportes conectados a la API. Tu selección se
-                  conserva en memoria.
-                </Text>
+                </Pressable>
               </View>
-            )}
-          </ScrollView>
+              {panel === "cases" && (
+                <>
+                  <Text style={styles.body}>
+                    Filtra los casos ficticios de esta demostración por su estado.
+                  </Text>
+                  {CASE_STATUSES.map((status) => (
+                    <Pressable
+                      key={status}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={status}
+                      accessibilityState={{
+                        checked: caseStatuses.includes(status),
+                      }}
+                      onPress={() => onToggleCase(status)}
+                      style={styles.option}
+                    >
+                      <Text style={[styles.label, styles.flex]}>{status}</Text>
+                      <Text accessible={false} style={styles.label}>
+                        <Ionicons
+                          name={
+                            caseStatuses.includes(status)
+                              ? "checkbox-outline"
+                              : "square-outline"
+                          }
+                          size={15}
+                          color="#173D3A"
+                          accessible={false}
+                          accessibilityElementsHidden
+                          importantForAccessibility="no"
+                        />
+                      </Text>
+                    </Pressable>
+                  ))}
+                </>
+              )}
+              {panel === "events" && (
+                <>
+                  <Text style={styles.body}>
+                    Los avistamientos son eventos independientes del estado de un
+                    caso.
+                  </Text>
+                  <View style={styles.option}>
+                    <Text style={[styles.label, styles.flex]}>Avistamientos</Text>
+                    <Switch
+                      accessibilityLabel="Mostrar capa de avistamientos"
+                      value={showSightings}
+                      onValueChange={onToggleSightings}
+                      trackColor={{ true: "#173D3A" }}
+                    />
+                  </View>
+                </>
+              )}
+              {panel === "relief" && (
+                <>
+                  <View style={styles.option}>
+                    <Text style={[styles.label, styles.flex]}>
+                      Relieve
+                    </Text>
+                    <Switch
+                      accessibilityLabel="Relieve no disponible"
+                      disabled
+                      value={false}
+                    />
+                  </View>
+                  <Text style={styles.body}>
+                    No disponible.
+                  </Text>
+                </>
+              )}
+              {panel !== "relief" && (
+                <View style={styles.notice}>
+                  <Text style={styles.label}>Modo demostración</Text>
+                  <Text style={styles.body}>
+                    Casos ficticios. No hay avistamientos en esta demostración.
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
         </SafeAreaView>
-      </View>
+      </SafeAreaProvider>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "#00000066", alignItems: "flex-end" },
+  overlay: { flex: 1, backgroundColor: "#00000066" },
+  safeArea: { flex: 1, alignItems: "flex-end" },
   panel: {
-    height: "100%",
+    flex: 1,
     width: "86%",
     maxWidth: 380,
     backgroundColor: "#F7F9F6",
   },
-  heading: { padding: 16, gap: 8 },
+  heading: { gap: 8 },
   title: { fontSize: 22, fontWeight: "800", color: "#173D3A" },
   close: {
     minHeight: 48,

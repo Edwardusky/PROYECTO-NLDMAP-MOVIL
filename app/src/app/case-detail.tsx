@@ -10,7 +10,7 @@ export default function CaseDetailScreen() {
     <SafeAreaView style={styles.screen} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.title}>Caso de demostración</Text>
-        <Text style={styles.body}>Datos ficticios para probar la interfaz. No representa a una persona ni un reporte real.</Text>
+        <Text style={styles.body}>Datos de demostración. No representa a una persona ni un reporte real.</Text>
         {item ? <>
           <Text style={styles.title}>{item.name}</Text>
           <Text style={styles.body}>Identificador: {item.id}{'\n'}Edad ficticia: {item.age} años{'\n'}Estado: {item.status}{'\n'}Municipio: {item.municipality}{'\n'}Fecha ficticia: {item.date}</Text>

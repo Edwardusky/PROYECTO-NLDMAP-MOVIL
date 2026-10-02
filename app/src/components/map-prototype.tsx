@@ -112,11 +112,10 @@ export default function MapPrototype() {
             <Pressable accessibilityRole="button" accessibilityLabel="Perfil. Abrir Iniciar sesión"
               onPress={() => { cancelSelection(); router.push('/login'); }} style={({ pressed }) => [styles.topButton, pressed && styles.pressed]}>
               <Ionicons name="person-circle-outline" size={22} color="#173D3A" style={{ width: 22, height: 22 }} accessible={false} accessibilityElementsHidden importantForAccessibility="no" />
-              <Text style={styles.controlText}>Perfil</Text>
             </Pressable>
           </View>
         </View>
-        <Text style={styles.body}>Tlaxcala  Encuadre inicial</Text>
+        <Text style={styles.body}>Tlaxcala</Text>
         <Text style={styles.caption}>DEMOSTRACIÓN · Casos ficticios · No es tu ubicación</Text>
       </View>
       <View style={styles.viewport} onLayout={(event) => {
@@ -167,9 +166,10 @@ export default function MapPrototype() {
               <View key={item.id} style={styles.caseRow}>
                 <Text style={styles.controlText}>{item.name}</Text>
                 <Text style={styles.body}>{item.age} años · {item.status}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel={'Ver detalle de ' + item.name}
-                  onPress={() => router.push({ pathname: '/case-detail', params: { id: item.id } })} style={styles.remove}>
-                  <Text style={styles.controlText}>Ver detalle</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={'Ver detalle del reporte de ' + item.name}
+                  onPress={() => router.push({ pathname: '/case-detail', params: { id: item.id } })}
+                  style={({ pressed }) => [styles.remove, pressed && styles.pressed]}>
+                  <Ionicons name="eye-outline" size={24} color="#173D3A" accessible={false} accessibilityElementsHidden importantForAccessibility="no" />
                 </Pressable>
               </View>
             ))}
@@ -178,22 +178,26 @@ export default function MapPrototype() {
         <ScrollView style={[styles.rail, { top: Math.max(viewport.height * 0.45, northTop + 72) }]}
           contentContainerStyle={styles.controls} showsVerticalScrollIndicator={false}>
           {([
-            ['relief', 'layers-outline', 'Capas', 'Pendiente'],
+            ['relief', 'layers-outline', 'Capas', 'Relieve no disponible'],
             ['cases', 'filter-outline', 'Casos', `${caseStatuses.length}/2`],
             ['events', 'eye-outline', 'Eventos', showSightings ? 'Activa' : 'Oculta'],
           ] as const).map(([id, icon, label, value]) => (
             <Pressable key={id} accessibilityRole="button" accessibilityLabel={`${label}: ${value}. Abrir opciones`}
-              onPress={() => setPanel(id)} style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
-              <Ionicons name={icon} size={22} color="#173D3A" style={{ width: 22, height: 22 }} accessible={false} accessibilityElementsHidden importantForAccessibility="no" />
-              <Text style={styles.controlText}>{label}</Text>
-              <Text style={styles.caption}>{value}</Text>
+              accessibilityState={{ expanded: panel === id, selected: panel === id }}
+              onPress={() => setPanel(id)} style={({ pressed }) => [styles.control, pressed && styles.controlPressed]}>
+              <View accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                {[[1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5]].map(([x, y], index) => (
+                  <Ionicons key={index} name={icon} size={28} color="#FFFFFF" style={[StyleSheet.absoluteFill, { transform: [{ translateX: x }, { translateY: y }] }]} />
+                ))}
+                <Ionicons name={icon} size={28} color={panel === id ? '#875619' : '#173D3A'} />
+              </View>
+              {panel === id && <View style={styles.activeDot} />}
             </Pressable>
           ))}
         </ScrollView>
       </View>
       <View style={styles.footer} accessibilityLiveRegion="polite">
         <Text style={styles.emptyTitle}>Demostración · {visibleCases.length} casos ficticios visibles</Text>
-        <Text style={styles.body}>Sin reportes reales ni avistamientos. API sin conectar.</Text>
         {mapFailed && <Text accessibilityRole="alert" style={styles.body}>No se pudo cargar el mapa. Revisa la conexión y vuelve a abrir esta pantalla.</Text>}
         <Text style={styles.draftTitle}>{selecting ? 'Seleccionar ubicación' : 'Consultar mapa'}</Text>
         {selectionError && <Text accessibilityRole="alert" style={styles.body}>{selectionError}</Text>}
@@ -244,8 +248,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   rail: { position: 'absolute', right: 12, bottom: 48, width: 88 },
   controls: { gap: 8, flexGrow: 1, justifyContent: 'flex-end' },
-  control: { minWidth: 76, minHeight: 64, padding: 8, borderRadius: 16, alignItems: 'center',
-    backgroundColor: '#F7F9F6', borderWidth: 1, borderColor: '#D8E1D9' },
+  control: { minWidth: 76, minHeight: 64, padding: 8, alignItems: 'center', justifyContent: 'center' },
+  controlPressed: { transform: [{ scale: 0.9 }], opacity: 0.75 },
+  activeDot: { position: 'absolute', bottom: 4, width: 7, height: 7, borderRadius: 4,
+    backgroundColor: '#875619', borderWidth: 1, borderColor: '#FFFFFF' },
   controlText: { color: '#173D3A', fontSize: 13, fontWeight: '700' },
   pressed: { opacity: 0.7 },
   footer: { paddingHorizontal: 16, paddingVertical: 10, gap: 3 },

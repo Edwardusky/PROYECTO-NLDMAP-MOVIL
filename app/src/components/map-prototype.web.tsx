@@ -7,7 +7,6 @@ export default function MapPrototype() {
     <View style={styles.screen}>
       <Text accessibilityRole="header" style={styles.title}>NLDMAP</Text>
       <Text style={styles.body}>El mapa está disponible en la app para Android e iOS.</Text>
-      <Text style={styles.body}>Abre la compilación de desarrollo móvil para usarlo.</Text>
     </View>
   );
 }

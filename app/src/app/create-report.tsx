@@ -10,11 +10,10 @@ export default function CreateReportScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text accessibilityRole="header" style={styles.title}>Crear reporte · Preparación</Text>
-        <Text style={styles.body}>No se ha creado, enviado ni guardado un reporte.</Text>
+        <Text accessibilityRole="header" style={styles.title}>Crear reporte</Text>
+        <Text style={styles.body}>Selección temporal · Sin guardar ni enviar.</Text>
         {valid ? <Text selectable style={styles.body}>Ubicación seleccionada manualmente:{'\n'}Latitud: {latitude.toFixed(6)}{'\n'}Longitud: {longitude.toFixed(6)}</Text>
           : <Text accessibilityRole="alert" style={styles.body}>Falta una ubicación válida. Vuelve al mapa para seleccionarla.</Text>}
-        <Text style={styles.body}>Será necesario iniciar sesión para enviar un reporte. La autenticación y el envío aún no están disponibles.</Text>
         <Pressable accessibilityRole="button" onPress={() => router.dismissTo('/')} style={styles.button}>
           <Text style={styles.buttonText}>Volver al mapa</Text>
         </Pressable>
