@@ -1,3 +1,4 @@
+import { palette as c } from '@/constants/palette';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,10 +26,10 @@ export default function CaseDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F7F9F6' },
+  screen: { flex: 1, backgroundColor: c.surface },
   content: { padding: 20, gap: 20 },
-  title: { fontSize: 24, fontWeight: '800', color: '#173D3A' },
-  body: { fontSize: 15, lineHeight: 24, color: '#52675E' },
-  button: { minHeight: 48, padding: 14, borderRadius: 12, backgroundColor: '#173D3A', alignItems: 'center' },
-  buttonText: { color: '#FFFFFF', fontWeight: '600' },
+  title: { fontSize: 24, fontWeight: '800', color: c.text },
+  body: { fontSize: 15, lineHeight: 24, color: c.muted },
+  button: { minHeight: 48, padding: 14, borderRadius: 12, backgroundColor: c.text, alignItems: 'center' },
+  buttonText: { color: c.paper, fontWeight: '600' },
 });

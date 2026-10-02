@@ -1,6 +1,7 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { palette as c } from '@/constants/palette';
+import { CloseButton } from './close-button';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 type Props = {
   point: [number, number];
@@ -34,9 +35,10 @@ export function MapSelectionPopup({ point, viewport, title, children, onClose }:
     <View style={[styles.popup, { left, top, width, maxHeight }]}
       onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
       onStartShouldSetResponder={() => true}>
+      <View style={styles.heading}>
+        <CloseButton label="Cerrar ficha del marcador" onPress={onClose} />
+      </View>
       <ScrollView contentContainerStyle={styles.content}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Cerrar ventana del marcador"
-          onPress={onClose} style={styles.close}><Text style={styles.label}>Cerrar <Ionicons name="close-outline" size={13} color="#173D3A" accessible={false} accessibilityElementsHidden importantForAccessibility="no" /></Text></Pressable>
         <Text accessibilityRole="header" style={styles.title}>{title}</Text>
         {children}
       </ScrollView>
@@ -45,11 +47,11 @@ export function MapSelectionPopup({ point, viewport, title, children, onClose }:
 }
 
 const styles = StyleSheet.create({
-  connector: { position: 'absolute', height: 2, backgroundColor: '#173D3A' },
-  popup: { position: 'absolute', borderRadius: 14, borderWidth: 1, borderColor: '#52675E',
-    backgroundColor: '#F7F9F6', overflow: 'hidden' },
+  connector: { position: 'absolute', height: 2, backgroundColor: c.text },
+  popup: { position: 'absolute', borderRadius: 14, borderWidth: 1, borderColor: c.muted,
+    backgroundColor: c.surface, overflow: 'hidden' },
   content: { padding: 10, gap: 8 },
-  close: { minHeight: 44, paddingHorizontal: 4, justifyContent: 'center', alignSelf: 'flex-end' },
-  label: { color: '#173D3A', fontSize: 13, fontWeight: '600' },
-  title: { color: '#173D3A', fontSize: 15, fontWeight: '700' },
+  heading: { paddingHorizontal: 8 },
+  label: { color: c.text, fontSize: 13, fontWeight: '600' },
+  title: { color: c.text, fontSize: 15, fontWeight: '700' },
 });

@@ -1,3 +1,4 @@
+import { palette as c } from '@/constants/palette';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
@@ -125,20 +126,20 @@ export default function AuthForm({ registering = false }: { registering?: boolea
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F7F9F6' },
+  screen: { flex: 1, backgroundColor: c.surface },
   content: { padding: 20, gap: 20 },
-  title: { color: '#173D3A', fontSize: 26, fontWeight: '800' },
-  card: { padding: 20, borderRadius: 20, backgroundColor: '#E8EEE7', gap: 16 },
-  body: { color: '#52675E', fontSize: 15, lineHeight: 24 },
+  title: { color: c.text, fontSize: 26, fontWeight: '800' },
+  card: { padding: 20, borderRadius: 20, backgroundColor: c.surfaceAlt, gap: 16 },
+  body: { color: c.muted, fontSize: 15, lineHeight: 24 },
   field: { gap: 6 },
-  label: { color: '#173D3A', fontSize: 15, fontWeight: '600' },
-  input: { minHeight: 48, padding: 12, backgroundColor: '#FFFFFF', color: '#173D3A', borderWidth: 1, borderColor: '#52675E', borderRadius: 10, fontSize: 16 },
-  invalid: { borderColor: '#A32929' },
-  error: { color: '#A32929', fontSize: 14, lineHeight: 20 },
+  label: { color: c.text, fontSize: 15, fontWeight: '600' },
+  input: { minHeight: 48, padding: 12, backgroundColor: c.paper, color: c.text, borderWidth: 1, borderColor: c.muted, borderRadius: 10, fontSize: 16 },
+  invalid: { borderColor: c.error },
+  error: { color: c.error, fontSize: 14, lineHeight: 20 },
   visibility: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
-  button: { minHeight: 48, padding: 14, borderRadius: 12, backgroundColor: '#173D3A', alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600', textAlign: 'center' },
+  button: { minHeight: 48, padding: 14, borderRadius: 12, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center' },
+  buttonText: { color: c.paper, fontSize: 15, fontWeight: '600', textAlign: 'center' },
   link: { minHeight: 48, justifyContent: 'center', alignItems: 'center', padding: 12 },
-  linkText: { color: '#173D3A', fontSize: 15, textDecorationLine: 'underline', textAlign: 'center' },
+  linkText: { color: c.text, fontSize: 15, textDecorationLine: 'underline', textAlign: 'center' },
   pressed: { opacity: 0.7 },
 });

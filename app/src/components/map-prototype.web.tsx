@@ -1,3 +1,4 @@
+import { palette as c } from '@/constants/palette';
 import { StyleSheet, Text, View } from 'react-native';
 
 // Keep this fallback independent of the native map and its re-exports.
@@ -12,7 +13,7 @@ export default function MapPrototype() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F7F9F6', padding: 24, gap: 12 },
-  title: { color: '#173D3A', fontSize: 24, fontWeight: '800' },
-  body: { color: '#52675E', fontSize: 15, lineHeight: 24 },
+  screen: { flex: 1, backgroundColor: c.surface, padding: 24, gap: 12 },
+  title: { color: c.text, fontSize: 24, fontWeight: '800' },
+  body: { color: c.muted, fontSize: 15, lineHeight: 24 },
 });

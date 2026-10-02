@@ -1,19 +1,20 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { palette as c } from '@/constants/palette';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { LocalDraftProvider } from '@/state/local-draft-context';
 
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = { initialRouteName: 'index' };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
+      <LocalDraftProvider>
       <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerTintColor: '#173D3A', headerStyle: { backgroundColor: '#F7F9F6' }, contentStyle: { backgroundColor: '#F7F9F6' } }}>
+      <Stack screenOptions={{ headerTintColor: c.text, headerStyle: { backgroundColor: c.surface }, contentStyle: { backgroundColor: c.surface } }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Iniciar sesión' }} />
         <Stack.Screen name="register" options={{ title: 'Crear cuenta' }} />
@@ -21,6 +22,7 @@ export default function RootLayout() {
         <Stack.Screen name="create-report" options={{ title: 'Crear reporte' }} />
         <Stack.Screen name="case-detail" options={{ title: 'Detalle · Demostración' }} />
       </Stack>
+      </LocalDraftProvider>
     </ThemeProvider>
   );
 }
