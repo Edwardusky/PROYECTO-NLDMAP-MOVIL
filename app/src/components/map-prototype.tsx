@@ -251,7 +251,7 @@ export default function MapPrototype() {
             </Pressable>
           </View>
         </View>
-        <Text style={styles.body}>Mapa de casos </Text>
+        <Text style={styles.body}>Mapa de reportes</Text>
         <Text style={styles.caption}>DEMOSTRACIÓN · Casos ficticios</Text>
       </View>
       <View
@@ -398,14 +398,14 @@ export default function MapPrototype() {
               viewport={viewport}
               title={
                 selectedCases.length === 1
-                  ? "1 caso en esta ubicación"
-                  : selectedCases.length + " casos en esta ubicación"
+                  ? "1 reporte en esta ubicación"
+                  : selectedCases.length + " reportes en esta ubicación"
               }
               onClose={() => setSelection(null)}
             >
               <Text style={styles.caption}>
-                DEMOSTRACIÓN · Coincidir en ubicación no implica relación entre
-                casos.
+                Compartir ubicación no implica que los reportes estén
+                relacionados.
               </Text>
               {selectedCases.map((item) => (
                 <View key={item.id} style={styles.caseRow}>
@@ -463,12 +463,12 @@ export default function MapPrototype() {
           {(
             [
               ["relief", "layers-outline", "Capas", "Relieve no disponible"],
-              ["cases", "filter-outline", "Casos", `${caseStatuses.length}/2`],
+              ["cases", "filter-outline", "Reportes", `${caseStatuses.length}/2`],
               [
                 "events",
                 "radio-outline",
-                "Eventos",
-                showSightings ? "Activa" : "Oculta",
+                "Avistamientos",
+                showSightings ? "Opción activada" : "Opción desactivada",
               ],
             ] as const
           ).map(([id, icon, label, value]) => (
@@ -564,11 +564,12 @@ export default function MapPrototype() {
         )}
         {caseStatuses.length === 0 && (
           <Text style={styles.body}>
-            No hay estados seleccionados. Abre Casos para mostrar reportes.
+            No hay estados de seguimiento seleccionados. Abre Reportes para
+            elegirlos.
           </Text>
         )}
         <Text style={styles.emptyTitle}>
-          Demostración · {visibleCases.length} casos ficticios visibles
+          {visibleCases.length} reportes visibles
         </Text>
         <Text style={styles.caption}>
           B · En búsqueda L · Localizados B/L · Ambos
@@ -590,8 +591,8 @@ export default function MapPrototype() {
         {selecting ? (
           <>
             <Text style={styles.body}>
-              Mueve el mapa bajo el indicador y confirma el punto. Centrar en Mi
-              ubicación no lo confirma.
+              Coloca el punto bajo el indicador y pulsa Confirmar ubicación.
+              Mi ubicación solo centra el mapa.
             </Text>
             <View style={styles.draftRow}>
               <Pressable

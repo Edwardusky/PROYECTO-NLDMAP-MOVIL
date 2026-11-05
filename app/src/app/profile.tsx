@@ -44,7 +44,7 @@ export default function ProfileScreen() {
   return (
     <FormScreen>
       <Text accessibilityRole="header" style={s.title}>
-        Vista previa de perfil
+        Perfil
       </Text>
       <LocalPhotoPicker
         label="Foto de perfil"
@@ -53,7 +53,7 @@ export default function ProfileScreen() {
       />
       <View style={s.card}>
         <Text accessibilityRole="header" style={s.heading}>
-          Contacto privado
+          Datos de contacto
         </Text>
         {field("firstName", "Nombre")}
         {field("lastName", "Apellidos")}
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
       </View>
       <Action
         secondary
-        label="Iniciar sesión"
+        label="Ver formulario de acceso"
         onPress={() => router.navigate("/login")}
       />
       <Action

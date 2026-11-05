@@ -89,7 +89,7 @@ export default function AuthForm({
 
   function pendingOAuth() {
     Keyboard.dismiss();
-    setNotice("Función no disponible");
+    setNotice("El acceso externo no está disponible.");
   }
 
   return (
@@ -106,7 +106,7 @@ export default function AuthForm({
           automaticallyAdjustKeyboardInsets={false}
         >
           <Text accessibilityRole="header" style={styles.title}>
-            {registering ? "Crear cuenta" : "Iniciar sesión"}
+            {registering ? "Registro" : "Acceso"}
           </Text>
           <View style={styles.card}>
             {fields.map((field, index) => {
@@ -184,9 +184,7 @@ export default function AuthForm({
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.buttonText}>
-                {registering ? "Crear cuenta" : "Iniciar sesión"}
-              </Text>
+              <Text style={styles.buttonText}>Iniciar sesion</Text>
             </Pressable>
             {notice && (
               <Text
@@ -197,28 +195,30 @@ export default function AuthForm({
                 {notice}
               </Text>
             )}
-            <Pressable
+            {/* <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Continuar con Google"
+              accessibilityLabel="Google · No disponible"
               onPress={pendingOAuth}
               style={({ pressed }) => [
                 styles.button,
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.buttonText}>Continuar con Google</Text>
-            </Pressable>
+               <Text style={styles.buttonText}>Google · No disponible</Text> 
+            </Pressable> */}
             {Platform.OS === "ios" && (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Continuar con Apple"
+                accessibilityLabel="Acceso externo · No disponible"
                 onPress={pendingOAuth}
                 style={({ pressed }) => [
                   styles.button,
                   pressed && styles.pressed,
                 ]}
               >
-                <Text style={styles.buttonText}>Continuar con Apple</Text>
+                <Text style={styles.buttonText}>
+                  Acceso externo · No disponible
+                </Text>
               </Pressable>
             )}
           </View>
@@ -226,15 +226,15 @@ export default function AuthForm({
             <Pressable accessibilityRole="link" style={styles.link}>
               <Text style={styles.linkText}>
                 {registering
-                  ? "¿Ya tienes cuenta? Iniciar sesión"
-                  : "¿No tienes cuenta? Crear cuenta"}
+                  ? "Ver formulario de acceso"
+                  : "Ver formulario de registro"}
               </Text>
             </Pressable>
           </Link>
           {!registering && (
             <Link href="/profile" asChild>
               <Pressable accessibilityRole="link" style={styles.link}>
-                <Text style={styles.linkText}>Ver información del perfil</Text>
+                <Text style={styles.linkText}>Ver Perfil</Text>
               </Pressable>
             </Link>
           )}

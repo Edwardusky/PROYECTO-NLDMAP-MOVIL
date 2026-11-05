@@ -11,7 +11,7 @@ export default function CaseDetailScreen() {
     <SafeAreaView style={styles.screen} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.title}>
-          Caso de demostración
+          Reporte
         </Text>
         <Text style={styles.body}>
           Datos de demostración. No representa a una persona ni un reporte real.
@@ -21,9 +21,9 @@ export default function CaseDetailScreen() {
             <Text style={styles.title}>{item.name}</Text>
             <Text style={styles.body}>
               Identificador: {item.id}
-              {"\n"}Edad ficticia: {item.age} años{"\n"}Estado: {item.status}
+              {"\n"}Edad: {item.age} años{"\n"}Estado de seguimiento: {item.status}
               {"\n"}Municipio: {item.municipality}
-              {"\n"}Fecha ficticia: {item.date}
+              {"\n"}Fecha: {item.date}
             </Text>
             <Text selectable style={styles.body}>
               Latitud: {item.coordinates[1]}
@@ -32,7 +32,7 @@ export default function CaseDetailScreen() {
           </>
         ) : (
           <Text accessibilityRole="alert" style={styles.body}>
-            No se encontró este caso de demostración.
+            No se encontró este reporte.
           </Text>
         )}
         <Pressable

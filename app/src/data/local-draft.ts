@@ -154,7 +154,7 @@ export function reportErrors(
   const errors: Record<string, string> = {};
   if (step === 0) {
     if (!report.firstName.trim())
-      errors.firstName = "Escribe el nombre de la persona buscada.";
+      errors.firstName = "Escribe el nombre de la persona reportada.";
     if (
       report.ageMode !== "No se sabe" &&
       (!/^\d{1,3}$/.test(report.age) || Number(report.age) > 120)

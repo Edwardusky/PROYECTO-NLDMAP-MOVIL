@@ -33,7 +33,7 @@ export function MapFilterPanel({
   onToggleSightings,
 }: Props) {
   const title =
-    panel === "cases" ? "Casos" : panel === "events" ? "Eventos" : "Capas";
+    panel === "cases" ? "Reportes" : panel === "events" ? "Avistamientos" : "Capas";
   return (
     <Modal
       visible={panel !== null}
@@ -76,7 +76,7 @@ export function MapFilterPanel({
               {panel === "cases" && (
                 <>
                   <Text style={styles.body}>
-                    Elige los estados que quieres mostrar.
+                    Filtra por el estado de seguimiento de la persona reportada.
                   </Text>
                   {CASE_STATUSES.map((status) => {
                     const checked = caseStatuses.includes(status);
@@ -122,8 +122,7 @@ export function MapFilterPanel({
                   })}
                   {!caseStatuses.length && (
                     <Text accessibilityLiveRegion="polite" style={styles.body}>
-                      Sin estados seleccionados. No se muestran casos en el
-                      mapa.
+                      Selecciona un estado de seguimiento para mostrar reportes.
                     </Text>
                   )}
                 </>
@@ -131,8 +130,8 @@ export function MapFilterPanel({
               {panel === "events" && (
                 <>
                   <Text style={styles.body}>
-                    Los avistamientos son eventos independientes del estado de
-                    un caso.
+                    Un avistamiento no cambia el estado de seguimiento. Este
+                    control aún no muestra avistamientos en el mapa.
                   </Text>
                   <View style={styles.option}>
                     <Ionicons
@@ -169,7 +168,9 @@ export function MapFilterPanel({
                       ios_backgroundColor={c.muted}
                     />
                   </View>
-                  <Text style={styles.body}>No disponible por ahora.</Text>
+                  <Text style={styles.body}>
+                    El relieve no está disponible en este momento.
+                  </Text>
                 </>
               )}
               <View style={styles.notice}>

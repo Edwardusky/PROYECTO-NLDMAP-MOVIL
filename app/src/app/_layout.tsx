@@ -22,8 +22,8 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ title: "Iniciar sesión" }} />
-          <Stack.Screen name="register" options={{ title: "Crear cuenta" }} />
+          <Stack.Screen name="login" options={{ title: "Acceso" }} />
+          <Stack.Screen name="register" options={{ title: "Registro" }} />
           <Stack.Screen name="profile" options={{ title: "Perfil" }} />
           <Stack.Screen
             name="create-report"
@@ -31,7 +31,7 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="case-detail"
-            options={{ title: "Detalle · Demostración" }}
+            options={{ title: "Detalle del reporte" }}
           />
         </Stack>
       </LocalDraftProvider>

@@ -25,14 +25,14 @@ import {
 const sections = [
   "Identificación",
   "Descripción",
-  "Última vez vista y hechos",
+  "Hechos y ubicación",
   "Quien reporta",
-  "Revisión",
+  "Revisión del borrador",
 ];
 type TextKey = {
   [K in keyof Report]: Report[K] extends string ? K : never;
 }[keyof Report];
-const unknown = ["Conocida", "Aproximada", "No se sabe"];
+const unknown = ["Conocida", "Se desconoce"];
 
 export default function CreateReportScreen() {
   const {
@@ -144,7 +144,7 @@ export default function CreateReportScreen() {
         return;
       }
     }
-    setNotice("Función no disponible. No se enviaron datos.");
+    setNotice("Campos comprobados. No se enviaron datos.");
   }
   function edit(index: number) {
     setStep(index);
@@ -159,7 +159,7 @@ export default function CreateReportScreen() {
     );
   }
   const coordinateText = r.coordinate
-    ? `${r.coordinate[1].toFixed(6)}, ${r.coordinate[0].toFixed(6)}`
+    ? "Elegida en el mapa"
     : "Sin seleccionar";
   return (
     <FormScreen key={step}>
@@ -171,10 +171,10 @@ export default function CreateReportScreen() {
       <Text accessibilityRole="header" style={s.title}>
         {step + 1} de 5 · {sections[step]}
       </Text>
-      <Text style={s.body}>
-        Completa solo lo que sabes. Los campos con * son necesarios para revisar
-        este borrador.
-      </Text>
+      {/* <Text style={s.body}>
+        Borrador temporal. Completa lo que sabes; los campos con * son
+        obligatorios.
+      </Text> */}
       {notice && (
         <Text
           accessibilityRole="alert"
@@ -186,19 +186,18 @@ export default function CreateReportScreen() {
       )}
       {step === 0 && (
         <>
-          {field("firstName", "Nombre de la persona buscada *")}
-          {field("lastName", "Apellidos · Opcional")}
+          {field("firstName", "Nombre de la persona reportada *")}
+          {field("lastName", "Apellidos")}
           {choose("ageMode", "Edad", unknown)}
           {r.ageMode !== "No se sabe" &&
             field("age", "Edad en años *", false, "number-pad")}
           {choose("sex", "Sexo", [
             "Mujer",
             "Hombre",
-            "Intersexual",
             "No se sabe",
           ])}
           <LocalPhotoPicker
-            label="Foto de la persona buscada"
+            label="Foto de la persona reportada"
             uri={r.photo}
             onChange={(photo) => update("photo", photo)}
           />
@@ -207,8 +206,7 @@ export default function CreateReportScreen() {
       {step === 1 && (
         <>
           <Text style={s.body}>
-            Todos los datos de descripción son opcionales. Deja vacío lo que no
-            sepas.
+            La descripción es opcional. Deja en blanco lo que no sepas.
           </Text>
           {field("height", "Estatura", false, "decimal-pad")}
           {choose("heightUnit", "Unidad de estatura", ["cm", "m"])}
@@ -287,7 +285,7 @@ export default function CreateReportScreen() {
             "Avistamiento",
           ])}
           <Text selectable style={s.body}>
-            Ubicación confirmada (latitud, longitud): {coordinateText}
+            Ubicación: {coordinateText}
           </Text>
           {errors.coordinate && (
             <Text accessibilityRole="alert" style={s.error}>
@@ -333,8 +331,7 @@ export default function CreateReportScreen() {
       {step === 3 && (
         <>
           <Text style={s.body}>
-            Contacto privado para gestionar el reporte. Puedes corregirlo aquí
-            sin cambiar tu perfil.
+            Datos de contacto. Puedes editarlos aquí sin cambiar tu perfil.
           </Text>
           <Action
             secondary
@@ -354,7 +351,7 @@ export default function CreateReportScreen() {
           </Text>
           {field("reporterEmail", "Correo de contacto", false, "email-address")}
           {field("reporterPhone", "Teléfono de contacto", false, "phone-pad")}
-          {choose("relationship", "Relación con la persona buscada", [
+          {choose("relationship", "Relación con la persona reportada", [
             "Familiar",
             "Amistad",
             "Conocido/a",
@@ -369,7 +366,7 @@ export default function CreateReportScreen() {
         <>
           <View style={s.card}>
             <Text accessibilityRole="header" style={s.heading}>
-              Persona buscada
+              Persona reportada
             </Text>
             {summary(
               "Nombre",
@@ -385,7 +382,7 @@ export default function CreateReportScreen() {
             {r.photo ? (
               <Image
                 source={{ uri: r.photo }}
-                accessibilityLabel="Foto de la persona buscada, vista previa"
+                accessibilityLabel="Foto de la persona reportada, vista previa"
                 style={{ width: "100%", height: 160 }}
                 resizeMode="contain"
               />
@@ -425,7 +422,7 @@ export default function CreateReportScreen() {
           </View>
           <View style={s.card}>
             <Text accessibilityRole="header" style={s.heading}>
-              Última vez vista y hechos
+              Hechos y ubicación
             </Text>
             {summary(
               "Fecha",
@@ -440,7 +437,7 @@ export default function CreateReportScreen() {
                 : `${r.time} · ${r.timeMode}`,
             )}
             {summary("Tipo de ubicación", r.locationKind)}
-            {summary("Latitud, longitud", coordinateText)}
+            {summary("Ubicación", coordinateText)}
             {summary("Estado", r.state)}
             {summary("Municipio", r.municipality)}
             {summary("Localidad", r.locality)}
@@ -458,7 +455,7 @@ export default function CreateReportScreen() {
           </View>
           <View style={s.card}>
             <Text accessibilityRole="header" style={s.heading}>
-              Contacto privado de quien reporta
+              Contacto de quien reporta
             </Text>
             {summary("Nombre", r.reporterName)}
             {summary("Correo", r.reporterEmail)}
