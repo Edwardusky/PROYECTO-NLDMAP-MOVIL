@@ -1,5 +1,5 @@
-import type { DemoCase } from './demo-cases';
-import type { CaseStatus } from '@/constants/map';
+import type { DemoCase } from '@/features/reports/fixtures/demo-cases';
+import type { CaseStatus } from '@/features/reports/model/case-status';
 
 export function filterCases(cases: DemoCase[], statuses: CaseStatus[]) {
   return cases.filter(item => statuses.includes(item.status));

@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { palette as c } from '@/constants/palette';
+import { palette as c } from '@/shared/constants/palette';
 
 export function FormScreen({ children }: { children: ReactNode }) {
   const headerHeight = useHeaderHeight();

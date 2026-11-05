@@ -1,4 +1,4 @@
-import { palette as c } from "@/constants/palette";
+import { palette as c } from "@/shared/constants/palette";
 import {
   Camera,
   GeoJSONSource,
@@ -21,19 +21,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { MapFilterPanel, type FilterPanel } from "./map-filter-panel";
-import { MapSelectionPopup } from "./map-selection-popup";
-import { useLocalDraft } from "@/state/local-draft-context";
-import { seedReport } from "@/data/local-draft";
-import { useDeviceLocation } from "@/hooks/use-device-location";
-import { filterCases, casesAtPoint, pointStatusLabel } from "@/data/map-cases";
-import { DEMO_CASES } from "@/data/demo-cases";
-import {
-  CASE_STATUSES,
-  INITIAL_VIEW,
-  MAP_STYLE,
-  type CaseStatus,
-} from "@/constants/map";
+import { MapFilterPanel, type FilterPanel } from "../components/map-filter-panel";
+import { MapSelectionPopup } from "../components/map-selection-popup";
+import { useProfile } from "@/features/profile/state/profile-context";
+import { useReportDraft } from "@/features/reports/state/report-draft-context";
+import { seedReport } from "@/features/reports/model/report-draft";
+import { useDeviceLocation } from "@/features/map/hooks/use-device-location";
+import { filterCases, casesAtPoint, pointStatusLabel } from "@/features/map/utils/map-cases";
+import { DEMO_CASES } from "@/features/reports/fixtures/demo-cases";
+import { INITIAL_VIEW, MAP_STYLE } from "@/features/map/constants/map";
+import { CASE_STATUSES, type CaseStatus } from "@/features/reports/model/case-status";
 
 export default function MapPrototype() {
   const [caseStatuses, setCaseStatuses] = useState<CaseStatus[]>([
@@ -41,15 +38,15 @@ export default function MapPrototype() {
   ]);
   const [showSightings, setShowSightings] = useState(true);
   const [panel, setPanel] = useState<FilterPanel | null>(null);
+  const { profile } = useProfile();
   const {
-    profile,
     report,
     setReport,
     picking: selecting,
     setPicking: setSelecting,
     editingLocation,
     setEditingLocation,
-  } = useLocalDraft();
+  } = useReportDraft();
   const cameraRef = useRef<CameraRef>(null);
   const [confirming, setConfirming] = useState(false);
   const [selectionError, setSelectionError] = useState<string | null>(null);

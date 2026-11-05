@@ -9,9 +9,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { CASE_STATUSES, type CaseStatus } from "@/constants/map";
-import { palette as c } from "@/constants/palette";
-import { CloseButton } from "./close-button";
+import { CASE_STATUSES, type CaseStatus } from "@/features/reports/model/case-status";
+import { palette as c } from "@/shared/constants/palette";
+import { CloseButton } from "@/shared/components/close-button";
 
 export type FilterPanel = "cases" | "events" | "relief";
 type Props = {

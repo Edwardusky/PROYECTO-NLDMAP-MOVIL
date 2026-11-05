@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet } from 'react-native';
-import { palette as c } from '@/constants/palette';
+import { palette as c } from '@/shared/constants/palette';
 
 export function CloseButton({ label, onPress }: { label: string; onPress: () => void }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}

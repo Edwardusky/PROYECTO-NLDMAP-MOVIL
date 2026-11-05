@@ -1,5 +1,5 @@
 import type { LngLat } from "@maplibre/maplibre-react-native";
-import type { CaseStatus } from "@/constants/map";
+import type { CaseStatus } from "@/features/reports/model/case-status";
 
 export type DemoCase = {
   id: string;

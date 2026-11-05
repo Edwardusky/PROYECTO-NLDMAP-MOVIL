@@ -1,4 +1,4 @@
-import { palette as c } from "@/constants/palette";
+import { palette as c } from "@/shared/constants/palette";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { Link, useFocusEffect } from "expo-router";
 import { useCallback, useRef, useState } from "react";

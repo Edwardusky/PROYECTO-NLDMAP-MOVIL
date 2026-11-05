@@ -1,31 +1,6 @@
-export type Profile = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  state: string;
-  municipality: string;
-  locality: string;
-  postalCode: string;
-  street: string;
-  reference: string;
-  social: string;
-  photo: string | null;
-};
-export const emptyProfile: Profile = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  state: "",
-  municipality: "",
-  locality: "",
-  postalCode: "",
-  street: "",
-  reference: "",
-  social: "",
-  photo: null,
-};
+import type { Profile } from "@/features/profile/model/profile";
+import { emailValid, phoneValid } from "../../../shared/validation/contact";
+
 export type Mark = {
   id: number;
   type: string;
@@ -104,12 +79,6 @@ export const emptyReport: Report = {
   reporterAddress: "",
   reporterSocial: "",
 };
-export const emailValid = (value: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-export const phoneValid = (value: string) =>
-  /^[+\d\s().-]+$/.test(value) &&
-  value.replace(/\D/g, "").length >= 7 &&
-  value.replace(/\D/g, "").length <= 15;
 export const coordinateValid = (point: [number, number] | null) =>
   !!point &&
   point.every(Number.isFinite) &&
