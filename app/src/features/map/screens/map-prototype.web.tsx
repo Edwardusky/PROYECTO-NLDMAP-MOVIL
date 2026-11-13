@@ -1,4 +1,4 @@
-import { palette as c } from '@/constants/palette';
+import { palette as c } from '@/shared/constants/palette';
 import { StyleSheet, Text, View } from 'react-native';
 
 // Keep this fallback independent of the native map and its re-exports.

@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Linking } from 'react-native';
-import { loadLocation, MissingNativeFeatureError } from '@/utils/native-features';
-import { locateOnce } from '@/data/device-location';
+import { loadLocation, MissingNativeFeatureError } from '@/shared/native/native-features';
+import { locateOnce } from '@/features/map/utils/device-location';
 
 export function useDeviceLocation(onPosition: (point: [number, number], approximate: boolean) => void) {
   const [loading, setLoading] = useState(false);

@@ -1,5 +1,5 @@
-import { palette as c } from '@/constants/palette';
-import { CloseButton } from './close-button';
+import { palette as c } from '@/shared/constants/palette';
+import { CloseButton } from '@/shared/components/close-button';
 import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 

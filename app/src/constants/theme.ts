@@ -4,7 +4,7 @@
  */
 
 import '@/global.css';
-import { palette } from './palette';
+import { palette } from '@/shared/constants/palette';
 
 import { Platform } from 'react-native';
 

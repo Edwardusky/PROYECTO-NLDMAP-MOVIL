@@ -1,8 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { loadImagePicker, MissingNativeFeatureError } from '@/utils/native-features';
+import { loadImagePicker, MissingNativeFeatureError } from '@/shared/native/native-features';
 import { useEffect, useRef, useState } from 'react';
 import { Image, Linking, StyleSheet, Text, View } from 'react-native';
-import { palette as c } from '@/constants/palette';
+import { palette as c } from '@/shared/constants/palette';
 import { Action, formStyles as s } from './form-controls';
 
 export function LocalPhotoPicker({ uri, onChange, label }: { uri: string | null; onChange: (uri: string | null) => void; label: string }) {
