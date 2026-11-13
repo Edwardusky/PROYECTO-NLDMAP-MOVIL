@@ -1,5 +1,11 @@
-import type { LngLat } from '@maplibre/maplibre-react-native';
+import type { LngLat } from "@maplibre/maplibre-react-native";
 
-// Camera framing only, approximately central Tlaxcala; never a device location or report.
-export const INITIAL_VIEW = { center: [-98.17, 19.42] as LngLat, zoom: 8.5 };
-export const MAP_STYLE = 'https://demotiles.maplibre.org/style.json';
+// Vista inicial aproximada de Tlaxcala.
+export const INITIAL_VIEW = {
+  center: [-98.17, 19.42] as LngLat,
+  zoom: 8.5,
+};
+
+// Estilo cartográfico para pruebas de desarrollo.
+export const MAP_STYLE =
+  "https://tiles.openfreemap.org/styles/liberty";

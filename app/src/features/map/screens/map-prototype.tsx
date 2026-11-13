@@ -289,28 +289,7 @@ export default function MapPrototype() {
         >
           <Camera ref={cameraRef} initialViewState={INITIAL_VIEW} />
           {/* Only existing country geometry. This source has no state boundaries. */}
-          <Layer
-            id="country-outline-contrast"
-            type="line"
-            source="maplibre"
-            source-layer="countries"
-            beforeId="countries-label"
-            paint={{
-              "line-color": c.muted,
-              "line-opacity": 0.65,
-              "line-width": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                4,
-                0.6,
-                10,
-                1.5,
-                16,
-                2,
-              ],
-            }}
-          />
+       
           <GeoJSONSource
             id="demo-cases"
             data={{
@@ -360,7 +339,7 @@ export default function MapPrototype() {
               type="symbol"
               layout={{
                 "text-field": ["get", "label"],
-                "text-font": ["Open Sans Semibold"],
+                "text-font": ["Noto Sans Bold"],
                 "text-size": 11,
                 "text-allow-overlap": true,
                 "text-ignore-placement": true,
