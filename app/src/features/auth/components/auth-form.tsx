@@ -184,7 +184,9 @@ export default function AuthForm({
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.buttonText}>Iniciar sesion</Text>
+              <Text style={styles.buttonText}>
+                {registering ? "Crear cuenta" : "Iniciar sesión"}
+              </Text>
             </Pressable>
             {notice && (
               <Text

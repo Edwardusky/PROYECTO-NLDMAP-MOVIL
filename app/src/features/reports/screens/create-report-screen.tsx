@@ -17,6 +17,12 @@ import { LocalPhotoPicker } from "@/shared/components/local-photo-picker";
 import { useProfile } from "@/features/profile/state/profile-context";
 import { useReportDraft } from "../state/report-draft-context";
 import {
+  INFORMATION_OPTIONS,
+  informationModeLabel,
+  isUnknownInformation,
+  normalizeInformationMode,
+} from "../model/report-options";
+import {
   coordinateValid,
   reportErrors,
   seedReport,
@@ -33,7 +39,7 @@ const sections = [
 type TextKey = {
   [K in keyof Report]: Report[K] extends string ? K : never;
 }[keyof Report];
-const unknown = ["Conocida", "Se desconoce"];
+const informationLabels = INFORMATION_OPTIONS.map((option) => option.label);
 
 export default function CreateReportScreen() {
   const { profile } = useProfile();
@@ -125,6 +131,19 @@ export default function CreateReportScreen() {
       />
     );
   }
+  function chooseInformation(
+    key: "ageMode" | "dateMode" | "timeMode",
+    label: string,
+  ) {
+    return (
+      <Choices
+        label={label}
+        options={informationLabels}
+        value={informationModeLabel(r[key])}
+        onChange={(label) => update(key, normalizeInformationMode(label))}
+      />
+    );
+  }
   function next() {
     const nextErrors = reportErrors(r, step);
     setErrors(nextErrors);
@@ -189,8 +208,8 @@ export default function CreateReportScreen() {
         <>
           {field("firstName", "Nombre de la persona reportada *")}
           {field("lastName", "Apellidos")}
-          {choose("ageMode", "Edad", unknown)}
-          {r.ageMode !== "No se sabe" &&
+          {chooseInformation("ageMode", "Edad")}
+          {!isUnknownInformation(r.ageMode) &&
             field("age", "Edad en años *", false, "number-pad")}
           {choose("sex", "Sexo", [
             "Mujer",
@@ -275,10 +294,11 @@ export default function CreateReportScreen() {
       )}
       {step === 2 && (
         <>
-          {choose("dateMode", "Fecha de última vez vista", unknown)}
-          {r.dateMode !== "No se sabe" && field("date", "Fecha * · AAAA-MM-DD")}
-          {choose("timeMode", "Hora de última vez vista", unknown)}
-          {r.timeMode !== "No se sabe" &&
+          {chooseInformation("dateMode", "Fecha de última vez vista")}
+          {!isUnknownInformation(r.dateMode) &&
+            field("date", "Fecha * · AAAA-MM-DD")}
+          {chooseInformation("timeMode", "Hora de última vez vista")}
+          {!isUnknownInformation(r.timeMode) &&
             field("time", "Hora * · HH:MM (24 horas)")}
           {choose("locationKind", "Qué representa el punto del mapa", [
             "Última vez vista",
@@ -375,8 +395,8 @@ export default function CreateReportScreen() {
             )}
             {summary(
               "Edad",
-              r.ageMode === "No se sabe"
-                ? r.ageMode
+              isUnknownInformation(r.ageMode)
+                ? informationModeLabel(r.ageMode)
                 : `${r.age} años · ${r.ageMode}`,
             )}
             {summary("Sexo", r.sex)}
@@ -427,14 +447,14 @@ export default function CreateReportScreen() {
             </Text>
             {summary(
               "Fecha",
-              r.dateMode === "No se sabe"
-                ? r.dateMode
+              isUnknownInformation(r.dateMode)
+                ? informationModeLabel(r.dateMode)
                 : `${r.date} · ${r.dateMode}`,
             )}
             {summary(
               "Hora",
-              r.timeMode === "No se sabe"
-                ? r.timeMode
+              isUnknownInformation(r.timeMode)
+                ? informationModeLabel(r.timeMode)
                 : `${r.time} · ${r.timeMode}`,
             )}
             {summary("Tipo de ubicación", r.locationKind)}
@@ -484,15 +504,6 @@ export default function CreateReportScreen() {
           label={step === 3 ? "Revisar borrador" : "Continuar"}
           onPress={next}
         />
-      )}
-      {notice && (
-        <Text
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-          style={s.body}
-        >
-          {notice}
-        </Text>
       )}
       <Action
         secondary

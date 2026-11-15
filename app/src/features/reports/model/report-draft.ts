@@ -1,5 +1,10 @@
 import type { Profile } from "@/features/profile/model/profile";
 import { emailValid, phoneValid } from "../../../shared/validation/contact";
+import {
+  isUnknownInformation,
+  normalizeInformationMode,
+  UNKNOWN_INFORMATION,
+} from "./report-options";
 
 export type Mark = {
   id: number;
@@ -47,7 +52,7 @@ export const emptyReport: Report = {
   started: false,
   firstName: "",
   lastName: "",
-  ageMode: "No se sabe",
+  ageMode: UNKNOWN_INFORMATION,
   age: "",
   sex: "No se sabe",
   photo: null,
@@ -59,9 +64,9 @@ export const emptyReport: Report = {
   marks: [],
   clothes: "",
   shoes: "",
-  dateMode: "No se sabe",
+  dateMode: UNKNOWN_INFORMATION,
   date: "",
-  timeMode: "No se sabe",
+  timeMode: UNKNOWN_INFORMATION,
   time: "",
   locationKind: "Última vez vista",
   coordinate: null,
@@ -85,6 +90,16 @@ export const coordinateValid = (point: [number, number] | null) =>
   Math.abs(point[0]) <= 180 &&
   Math.abs(point[1]) <= 90;
 export function seedReport(report: Report, profile: Profile): Report {
+  const ageMode = normalizeInformationMode(report.ageMode);
+  const dateMode = normalizeInformationMode(report.dateMode);
+  const timeMode = normalizeInformationMode(report.timeMode);
+  if (
+    ageMode !== report.ageMode ||
+    dateMode !== report.dateMode ||
+    timeMode !== report.timeMode
+  ) {
+    report = { ...report, ageMode, dateMode, timeMode };
+  }
   return report.started
     ? report
     : {
@@ -125,10 +140,10 @@ export function reportErrors(
     if (!report.firstName.trim())
       errors.firstName = "Escribe el nombre de la persona reportada.";
     if (
-      report.ageMode !== "No se sabe" &&
+      !isUnknownInformation(report.ageMode) &&
       (!/^\d{1,3}$/.test(report.age) || Number(report.age) > 120)
     )
-      errors.age = "Escribe una edad entre 0 y 120 años o elige No se sabe.";
+      errors.age = "Escribe una edad entre 0 y 120 años o elige Se desconoce.";
   }
   if (step === 1 && report.height.trim()) {
     const value = Number(report.height.replace(",", "."));
@@ -140,10 +155,10 @@ export function reportErrors(
   if (step === 2) {
     if (!coordinateValid(report.coordinate))
       errors.coordinate = "Selecciona y confirma una ubicación en el mapa.";
-    if (report.dateMode !== "No se sabe" && !validDate(report.date))
+    if (!isUnknownInformation(report.dateMode) && !validDate(report.date))
       errors.date = "Usa una fecha válida: AAAA-MM-DD.";
     if (
-      report.timeMode !== "No se sabe" &&
+      !isUnknownInformation(report.timeMode) &&
       !/^([01]\d|2[0-3]):[0-5]\d$/.test(report.time)
     )
       errors.time = "Usa una hora válida: HH:MM (24 horas).";
