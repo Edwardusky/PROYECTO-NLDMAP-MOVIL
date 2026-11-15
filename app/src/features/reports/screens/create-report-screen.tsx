@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { BackHandler, Image, Text, View } from "react-native";
+import { BackHandler, Text } from "react-native";
 import {
   router,
   Stack,
@@ -8,25 +8,22 @@ import {
 } from "expo-router";
 import {
   Action,
-  Choices,
-  Field,
   FormScreen,
   formStyles as s,
 } from "@/shared/components/form-controls";
-import { LocalPhotoPicker } from "@/shared/components/local-photo-picker";
 import { useProfile } from "@/features/profile/state/profile-context";
+import { ReportContactStep } from "../components/report-contact-step";
+import { ReportDescriptionStep } from "../components/report-description-step";
+import { ReportIdentificationStep } from "../components/report-identification-step";
+import { ReportLocationStep } from "../components/report-location-step";
+import { ReportReviewStep } from "../components/report-review-step";
 import { useReportDraft } from "../state/report-draft-context";
-import {
-  INFORMATION_OPTIONS,
-  informationModeLabel,
-  isUnknownInformation,
-  normalizeInformationMode,
-} from "../model/report-options";
 import {
   coordinateValid,
   reportErrors,
   seedReport,
   type Report,
+  type Mark,
 } from "@/features/reports/model/report-draft";
 
 const sections = [
@@ -36,10 +33,6 @@ const sections = [
   "Quien reporta",
   "Revisión del borrador",
 ];
-type TextKey = {
-  [K in keyof Report]: Report[K] extends string ? K : never;
-}[keyof Report];
-const informationLabels = INFORMATION_OPTIONS.map((option) => option.label);
 
 export default function CreateReportScreen() {
   const { profile } = useProfile();
@@ -97,52 +90,39 @@ export default function CreateReportScreen() {
     setErrors((current) => ({ ...current, [key]: "" }));
     setNotice(null);
   }
-  function field(
-    key: TextKey,
-    label: string,
-    multiline = false,
-    keyboardType:
-      | "default"
-      | "number-pad"
-      | "decimal-pad"
-      | "email-address"
-      | "phone-pad" = "default",
-  ) {
-    return (
-      <Field
-        key={key}
-        label={label}
-        value={r[key]}
-        onChangeText={(value) => update(key, value)}
-        error={errors[key]}
-        multiline={multiline}
-        keyboardType={keyboardType}
-        autoCapitalize={keyboardType === "email-address" ? "none" : "sentences"}
-      />
+  function addMark() {
+    update("marks", [
+      ...r.marks,
+      {
+        id: Math.max(0, ...r.marks.map((mark) => mark.id)) + 1,
+        type: "",
+        area: "",
+        description: "",
+      },
+    ]);
+  }
+  function removeMark(id: number) {
+    update(
+      "marks",
+      r.marks.filter((mark) => mark.id !== id),
     );
   }
-  function choose(key: TextKey, label: string, options: readonly string[]) {
-    return (
-      <Choices
-        label={label}
-        options={options}
-        value={r[key]}
-        onChange={(value) => update(key, value)}
-      />
+  function updateMark(id: number, key: Exclude<keyof Mark, "id">, value: string) {
+    update(
+      "marks",
+      r.marks.map((mark) => mark.id === id ? { ...mark, [key]: value } : mark),
     );
   }
-  function chooseInformation(
-    key: "ageMode" | "dateMode" | "timeMode",
-    label: string,
-  ) {
-    return (
-      <Choices
-        label={label}
-        options={informationLabels}
-        value={informationModeLabel(r[key])}
-        onChange={(label) => update(key, normalizeInformationMode(label))}
-      />
-    );
+  function pickLocation() {
+    setEditingLocation(true);
+    setPicking(true);
+    router.navigate("/");
+  }
+  function copyProfileContact() {
+    const seeded = seedReport({ ...r, started: false }, profile);
+    setReport(seeded);
+    setErrors({});
+    setNotice("Datos del perfil copiados al borrador. Puedes corregirlos.");
   }
   function next() {
     const nextErrors = reportErrors(r, step);
@@ -171,16 +151,6 @@ export default function CreateReportScreen() {
     setErrors({});
     setNotice(null);
   }
-  function summary(label: string, value: string) {
-    return (
-      <Text style={s.body}>
-        {label}: {value.trim() || "No indicado"}
-      </Text>
-    );
-  }
-  const coordinateText = r.coordinate
-    ? "Elegida en el mapa"
-    : "Sin seleccionar";
   return (
     <FormScreen key={step}>
       <Stack.Screen
@@ -205,299 +175,36 @@ export default function CreateReportScreen() {
         </Text>
       )}
       {step === 0 && (
-        <>
-          {field("firstName", "Nombre de la persona reportada *")}
-          {field("lastName", "Apellidos")}
-          {chooseInformation("ageMode", "Edad")}
-          {!isUnknownInformation(r.ageMode) &&
-            field("age", "Edad en años *", false, "number-pad")}
-          {choose("sex", "Sexo", [
-            "Mujer",
-            "Hombre",
-            "No se sabe",
-          ])}
-          <LocalPhotoPicker
-            label="Foto de la persona reportada"
-            uri={r.photo}
-            onChange={(photo) => update("photo", photo)}
-          />
-        </>
+        <ReportIdentificationStep report={r} errors={errors} onUpdate={update} />
       )}
       {step === 1 && (
-        <>
-          <Text style={s.body}>
-            La descripción es opcional. Deja en blanco lo que no sepas.
-          </Text>
-          {field("height", "Estatura", false, "decimal-pad")}
-          {choose("heightUnit", "Unidad de estatura", ["cm", "m"])}
-          {field("build", "Complexión")}
-          {field("skin", "Color de piel")}
-          {field("hair", "Color y características del cabello")}
-          <Text accessibilityRole="header" style={s.heading}>
-            Señas particulares
-          </Text>
-          {r.marks.map((mark, index) => (
-            <View key={mark.id} style={s.card}>
-              <Text style={s.label}>Seña {index + 1}</Text>
-              {(["type", "area", "description"] as const).map((key, i) => (
-                <Field
-                  key={key}
-                  label={
-                    [
-                      "Tipo (tatuaje, cicatriz, lunar u otro)",
-                      "Zona corporal y lado",
-                      "Descripción",
-                    ][i]
-                  }
-                  value={mark[key]}
-                  multiline={key === "description"}
-                  onChangeText={(value) =>
-                    update(
-                      "marks",
-                      r.marks.map((item) =>
-                        item.id === mark.id ? { ...item, [key]: value } : item,
-                      ),
-                    )
-                  }
-                />
-              ))}
-              <Action
-                secondary
-                label={`Quitar seña ${index + 1}`}
-                onPress={() =>
-                  update(
-                    "marks",
-                    r.marks.filter((item) => item.id !== mark.id),
-                  )
-                }
-              />
-            </View>
-          ))}
-          <Action
-            secondary
-            label="Añadir seña particular"
-            onPress={() =>
-              update("marks", [
-                ...r.marks,
-                {
-                  id: Math.max(0, ...r.marks.map((mark) => mark.id)) + 1,
-                  type: "",
-                  area: "",
-                  description: "",
-                },
-              ])
-            }
-          />
-          {field("clothes", "Ropa que llevaba", true)}
-          {field("shoes", "Calzado", true)}
-        </>
+        <ReportDescriptionStep
+          report={r}
+          errors={errors}
+          onUpdate={update}
+          onAddMark={addMark}
+          onRemoveMark={removeMark}
+          onUpdateMark={updateMark}
+        />
       )}
       {step === 2 && (
-        <>
-          {chooseInformation("dateMode", "Fecha de última vez vista")}
-          {!isUnknownInformation(r.dateMode) &&
-            field("date", "Fecha * · AAAA-MM-DD")}
-          {chooseInformation("timeMode", "Hora de última vez vista")}
-          {!isUnknownInformation(r.timeMode) &&
-            field("time", "Hora * · HH:MM (24 horas)")}
-          {choose("locationKind", "Qué representa el punto del mapa", [
-            "Última vez vista",
-            "Ubicación inferida",
-            "Avistamiento",
-          ])}
-          <Text selectable style={s.body}>
-            Ubicación: {coordinateText}
-          </Text>
-          {errors.coordinate && (
-            <Text accessibilityRole="alert" style={s.error}>
-              {errors.coordinate}
-            </Text>
-          )}
-          <Action
-            secondary
-            label={
-              r.coordinate
-                ? "Corregir ubicación en el mapa"
-                : "Elegir ubicación en el mapa"
-            }
-            onPress={() => {
-              setEditingLocation(true);
-              setPicking(true);
-              router.navigate("/");
-            }}
-          />
-          <Text style={s.body}>
-            Escribe la dirección si la conoces. No se obtiene automáticamente
-            del punto elegido.
-          </Text>
-          {field("state", "Estado · Opcional")}
-          {field("municipality", "Municipio · Opcional")}
-          {field("locality", "Localidad o colonia · Opcional")}
-          {field("reference", "Dirección o referencia · Opcional", true)}
-          {field("story", "Relato breve de lo ocurrido *", true)}
-          <Choices
-            label="¿Tienes información de vehículos o personas involucradas?"
-            options={["No / No se sabe", "Sí"]}
-            value={r.involved ? "Sí" : "No / No se sabe"}
-            onChange={(value) => update("involved", value === "Sí")}
-          />
-          {r.involved &&
-            field(
-              "involvement",
-              "Información que conoces · Opcional (personas, placas, modelo)",
-              true,
-            )}
-        </>
+        <ReportLocationStep
+          report={r}
+          errors={errors}
+          onUpdate={update}
+          onPickLocation={pickLocation}
+        />
       )}
       {step === 3 && (
-        <>
-          <Text style={s.body}>
-            Datos de contacto. Puedes editarlos aquí sin cambiar tu perfil.
-          </Text>
-          <Action
-            secondary
-            label="Usar datos del perfil local"
-            onPress={() => {
-              const seeded = seedReport({ ...r, started: false }, profile);
-              setReport(seeded);
-              setErrors({});
-              setNotice(
-                "Datos del perfil copiados al borrador. Puedes corregirlos.",
-              );
-            }}
-          />
-          {field("reporterName", "Nombre completo de quien reporta *")}
-          <Text style={s.body}>
-            Indica al menos un correo o teléfono válido.
-          </Text>
-          {field("reporterEmail", "Correo de contacto", false, "email-address")}
-          {field("reporterPhone", "Teléfono de contacto", false, "phone-pad")}
-          {choose("relationship", "Relación con la persona reportada", [
-            "Familiar",
-            "Amistad",
-            "Conocido/a",
-            "Otra",
-            "Prefiero no indicar",
-          ])}
-          {field("reporterAddress", "Domicilio de contacto · Opcional", true)}
-          {field("reporterSocial", "Redes sociales de contacto · Opcional")}
-        </>
+        <ReportContactStep
+          report={r}
+          errors={errors}
+          onUpdate={update}
+          onUseProfile={copyProfileContact}
+        />
       )}
       {step === 4 && (
-        <>
-          <View style={s.card}>
-            <Text accessibilityRole="header" style={s.heading}>
-              Persona reportada
-            </Text>
-            {summary(
-              "Nombre",
-              [r.firstName, r.lastName].filter(Boolean).join(" "),
-            )}
-            {summary(
-              "Edad",
-              isUnknownInformation(r.ageMode)
-                ? informationModeLabel(r.ageMode)
-                : `${r.age} años · ${r.ageMode}`,
-            )}
-            {summary("Sexo", r.sex)}
-            {r.photo ? (
-              <Image
-                source={{ uri: r.photo }}
-                accessibilityLabel="Foto de la persona reportada, vista previa"
-                style={{ width: "100%", height: 160 }}
-                resizeMode="contain"
-              />
-            ) : (
-              summary("Foto", "Sin foto")
-            )}
-            <Action
-              secondary
-              label="Editar identificación"
-              onPress={() => edit(0)}
-            />
-          </View>
-          <View style={s.card}>
-            <Text accessibilityRole="header" style={s.heading}>
-              Descripción
-            </Text>
-            {summary("Estatura", r.height ? `${r.height} ${r.heightUnit}` : "")}
-            {summary("Complexión", r.build)}
-            {summary("Piel", r.skin)}
-            {summary("Cabello", r.hair)}
-            {r.marks.length
-              ? r.marks.map((mark, i) => (
-                  <Text key={mark.id} style={s.body}>
-                    Seña {i + 1}: {mark.type || "Tipo no indicado"} ·{" "}
-                    {mark.area || "Zona no indicada"} ·{" "}
-                    {mark.description || "Sin descripción"}
-                  </Text>
-                ))
-              : summary("Señas", "No indicadas")}
-            {summary("Ropa", r.clothes)}
-            {summary("Calzado", r.shoes)}
-            <Action
-              secondary
-              label="Editar descripción"
-              onPress={() => edit(1)}
-            />
-          </View>
-          <View style={s.card}>
-            <Text accessibilityRole="header" style={s.heading}>
-              Hechos y ubicación
-            </Text>
-            {summary(
-              "Fecha",
-              isUnknownInformation(r.dateMode)
-                ? informationModeLabel(r.dateMode)
-                : `${r.date} · ${r.dateMode}`,
-            )}
-            {summary(
-              "Hora",
-              isUnknownInformation(r.timeMode)
-                ? informationModeLabel(r.timeMode)
-                : `${r.time} · ${r.timeMode}`,
-            )}
-            {summary("Tipo de ubicación", r.locationKind)}
-            {summary("Ubicación", coordinateText)}
-            {summary("Estado", r.state)}
-            {summary("Municipio", r.municipality)}
-            {summary("Localidad", r.locality)}
-            {summary("Referencia", r.reference)}
-            {summary("Relato", r.story)}
-            {summary(
-              "Personas o vehículos involucrados",
-              r.involved ? r.involvement : "No / No se sabe",
-            )}
-            <Action
-              secondary
-              label="Editar hechos y ubicación"
-              onPress={() => edit(2)}
-            />
-          </View>
-          <View style={s.card}>
-            <Text accessibilityRole="header" style={s.heading}>
-              Contacto de quien reporta
-            </Text>
-            {summary("Nombre", r.reporterName)}
-            {summary("Correo", r.reporterEmail)}
-            {summary("Teléfono", r.reporterPhone)}
-            {summary("Relación", r.relationship)}
-            {summary("Domicilio", r.reporterAddress)}
-            {summary("Redes", r.reporterSocial)}
-            <Action secondary label="Editar contacto" onPress={() => edit(3)} />
-          </View>
-          <Text style={s.body}>
-            Los datos de contacto servirían para gestionar el reporte y no
-            formarían parte de una ficha pública. Una eventual publicación de
-            información de la persona buscada requeriría una decisión aparte.
-            Esta vista previa no envía ni publica datos.
-          </Text>
-          <Text style={s.body}>
-            NLDMAP no registra denuncias oficiales, no inicia una búsqueda de
-            autoridad y no está conectado al RNPDNO.
-          </Text>
-          <Action label="Enviar reporte" onPress={submit} />
-        </>
+        <ReportReviewStep report={r} onEdit={edit} onSubmit={submit} />
       )}
       {step < 4 && (
         <Action
