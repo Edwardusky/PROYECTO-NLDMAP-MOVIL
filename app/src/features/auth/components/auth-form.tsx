@@ -15,23 +15,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type Field = "email" | "firstName" | "lastName" | "password";
-type Values = Record<Field, string>;
-type Errors = Partial<Record<Field, string>>;
+import {
+  validateAuth,
+  type Field,
+  type Values,
+  type Errors,
+} from "../model/auth-validation";
 
-export function validateAuth(values: Values, registering: boolean): Errors {
-  const errors: Errors = {};
-  if (!values.email.trim()) errors.email = "Escribe tu correo.";
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim()))
-    errors.email = "Escribe un correo válido.";
-  if (registering && !values.firstName.trim())
-    errors.firstName = "Escribe tu nombre.";
-  if (registering && !values.lastName.trim())
-    errors.lastName = "Escribe tus apellidos.";
-  // No password policy exists yet. Do not trim or impose length/complexity rules.
-  if (!values.password) errors.password = "Escribe tu contraseña.";
-  return errors;
-}
+// Preserve the existing export for consumers of the form module.
+export { validateAuth } from "../model/auth-validation";
 
 export default function AuthForm({
   registering = false,

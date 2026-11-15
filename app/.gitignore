@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# Numeric process core dumps (for example core.1191)
+/core.[0-9]*
