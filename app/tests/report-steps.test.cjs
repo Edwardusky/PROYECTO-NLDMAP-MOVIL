@@ -22,6 +22,7 @@ function form({ report = emptyReport, step = 0, profile = emptyProfile, params =
   const cache = new Map();
   const controls = Object.fromEntries(["Action", "Choices", "Field", "FormScreen"].map(name => [name, name]));
   controls.formStyles = {};
+  controls.useFormStyles = () => ({});
   const set = key => value => { state[key] = typeof value === "function" ? value(state[key]) : value; };
   const draft = {
     setReport: set("report"), setStep: set("step"),

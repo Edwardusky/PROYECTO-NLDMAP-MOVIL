@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { CASE_STATUSES, type CaseStatus } from "@/features/reports/model/case-status";
-import { palette as c } from "@/shared/constants/palette";
+import type { Palette } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { CloseButton } from "@/shared/components/close-button";
 
 export type FilterPanel = "cases" | "events" | "relief";
@@ -22,7 +23,6 @@ type Props = {
   showSightings: boolean;
   onToggleSightings: () => void;
 };
-const trackColor = { false: c.muted, true: c.action };
 
 export function MapFilterPanel({
   panel,
@@ -32,6 +32,13 @@ export function MapFilterPanel({
   showSightings,
   onToggleSightings,
 }: Props) {
+  const { colors: c } = useAppTheme();
+  const styles = createStyles(c);
+
+  const trackColor = {
+    false: c.muted,
+    true: c.action,
+  };
   const title =
     panel === "cases" ? "Reportes" : panel === "events" ? "Avistamientos" : "Capas";
   return (
@@ -185,43 +192,46 @@ export function MapFilterPanel({
     </Modal>
   );
 }
-const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: c.overlay },
-  safeArea: { flex: 1, alignItems: "flex-end" },
-  panel: {
-    flex: 1,
-    minHeight: 0,
-    width: "86%",
-    maxWidth: 380,
-    backgroundColor: c.surface,
-  },
-  heading: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderBottomWidth: 1,
-    borderColor: c.divider,
-  },
-  title: { flex: 1, fontSize: 22, fontWeight: "800", color: c.text },
-  scroll: { flex: 1, minHeight: 0 },
-  content: { padding: 16, gap: 16 },
-  body: { fontSize: 14, lineHeight: 22, color: c.muted },
-  label: { fontSize: 15, fontWeight: "600", color: c.text },
-  option: {
-    minHeight: 56,
-    padding: 12,
-    gap: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 12,
-    backgroundColor: c.surfaceAlt,
-    borderWidth: 1,
-    borderColor: c.border,
-  },
-  selected: { borderColor: c.action, borderWidth: 2 },
-  flex: { flex: 1 },
-  pressed: { opacity: 0.7 },
-  notice: { borderTopWidth: 1, borderColor: c.divider, paddingTop: 16 },
-});
+
+function createStyles(c: Palette) {
+  return StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: c.overlay },
+    safeArea: { flex: 1, alignItems: "flex-end" },
+    panel: {
+      flex: 1,
+      minHeight: 0,
+      width: "86%",
+      maxWidth: 380,
+      backgroundColor: c.surface,
+    },
+    heading: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      borderBottomWidth: 1,
+      borderColor: c.divider,
+    },
+    title: { flex: 1, fontSize: 22, fontWeight: "800", color: c.text },
+    scroll: { flex: 1, minHeight: 0 },
+    content: { padding: 16, gap: 16 },
+    body: { fontSize: 14, lineHeight: 22, color: c.muted },
+    label: { fontSize: 15, fontWeight: "600", color: c.text },
+    option: {
+      minHeight: 56,
+      padding: 12,
+      gap: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      borderRadius: 12,
+      backgroundColor: c.surfaceAlt,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    selected: { borderColor: c.action, borderWidth: 2 },
+    flex: { flex: 1 },
+    pressed: { opacity: 0.7 },
+    notice: { borderTopWidth: 1, borderColor: c.divider, paddingTop: 16 },
+  });
+}

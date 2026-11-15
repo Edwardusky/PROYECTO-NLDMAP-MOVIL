@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { palette as c } from "@/shared/constants/palette";
+import type { Palette } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { MapSelectionPopup } from "./map-selection-popup";
 import type { MapCase } from "../utils/map-cases";
 
@@ -13,6 +14,8 @@ type Props = {
 };
 
 export function MapReportPopup(props: Props) {
+  const { colors: c } = useAppTheme();
+  const styles = createStyles(c);
   const { point, viewport, selectedCases, onClose, onOpenReport } = props;
   return (
     <MapSelectionPopup
@@ -71,19 +74,21 @@ export function MapReportPopup(props: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  body: { color: c.muted, fontSize: 12, lineHeight: 18 },
-  caption: { color: c.muted, fontSize: 11, lineHeight: 16 },
-  caseRow: { gap: 4, paddingTop: 8, borderTopWidth: 1, borderColor: c.divider },
-  controlText: { color: c.text, fontSize: 13, fontWeight: "700" },
-  pressed: { opacity: 0.7 },
-  remove: {
-    minHeight: 48,
-    minWidth: 64,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: c.surfaceAlt,
-    borderRadius: 12,
-  },
-});
+function createStyles(c: Palette) {
+  return StyleSheet.create({
+    body: { color: c.muted, fontSize: 12, lineHeight: 18 },
+    caption: { color: c.muted, fontSize: 11, lineHeight: 16 },
+    caseRow: { gap: 4, paddingTop: 8, borderTopWidth: 1, borderColor: c.divider },
+    controlText: { color: c.text, fontSize: 13, fontWeight: "700" },
+    pressed: { opacity: 0.7 },
+    remove: {
+      minHeight: 48,
+      minWidth: 64,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 10,
+      backgroundColor: c.surfaceAlt,
+      borderRadius: 12,
+    },
+  });
+}

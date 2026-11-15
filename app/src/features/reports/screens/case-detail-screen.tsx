@@ -1,10 +1,13 @@
-import { palette as c } from "@/shared/constants/palette";
+import type { Palette } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DEMO_CASES } from "@/features/reports/fixtures/demo-cases";
 
 export default function CaseDetailScreen() {
+  const { colors: c } = useAppTheme();
+  const styles = createStyles(c);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const item = DEMO_CASES.find((entry) => entry.id === id);
   return (
@@ -47,17 +50,19 @@ export default function CaseDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.surface },
-  content: { padding: 20, gap: 20 },
-  title: { fontSize: 24, fontWeight: "800", color: c.text },
-  body: { fontSize: 15, lineHeight: 24, color: c.muted },
-  button: {
-    minHeight: 48,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: c.text,
-    alignItems: "center",
-  },
-  buttonText: { color: c.paper, fontWeight: "600" },
-});
+function createStyles(c: Palette) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.surface },
+    content: { padding: 20, gap: 20 },
+    title: { fontSize: 24, fontWeight: "800", color: c.text },
+    body: { fontSize: 15, lineHeight: 24, color: c.muted },
+    button: {
+      minHeight: 48,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: c.action,
+      alignItems: "center",
+    },
+    buttonText: { color: c.onAction, fontWeight: "600" },
+  });
+}

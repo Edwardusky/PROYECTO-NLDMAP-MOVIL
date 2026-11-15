@@ -1,4 +1,4 @@
-import { Action, Field, formStyles as s } from "@/shared/components/form-controls";
+import { Action, Field, useFormStyles } from "@/shared/components/form-controls";
 import { Text, View } from "react-native";
 import type { Mark } from "../model/report-draft";
 import { createReportFields, type ReportStepProps } from "./report-step-fields";
@@ -10,6 +10,7 @@ type Props = ReportStepProps & {
 };
 
 export function ReportDescriptionStep(props: Props) {
+  const s = useFormStyles();
   const { report: r } = props;
   const { field, choose } = createReportFields(props);
   return (

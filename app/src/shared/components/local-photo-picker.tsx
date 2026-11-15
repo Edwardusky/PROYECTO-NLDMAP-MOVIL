@@ -2,10 +2,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { loadImagePicker, MissingNativeFeatureError } from '@/shared/native/native-features';
 import { useEffect, useRef, useState } from 'react';
 import { Image, Linking, StyleSheet, Text, View } from 'react-native';
-import { palette as c } from '@/shared/constants/palette';
-import { Action, formStyles as s } from './form-controls';
+import { useAppTheme } from "@/shared/theme/app-theme-context";
+import { Action, useFormStyles } from "./form-controls";
 
 export function LocalPhotoPicker({ uri, onChange, label }: { uri: string | null; onChange: (uri: string | null) => void; label: string }) {
+  const { colors: c } = useAppTheme();
+  const s = useFormStyles();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState(false);
@@ -42,9 +44,15 @@ export function LocalPhotoPicker({ uri, onChange, label }: { uri: string | null;
   }
   return <View style={s.field}>
     <Text style={s.label}>{label} · Opcional</Text>
-    {uri ? <Image source={{ uri }} accessibilityLabel={`Vista previa: ${label}`} style={styles.image} resizeMode="contain"
+    {uri ? <Image source={{ uri }} accessibilityLabel={`Vista previa: ${label}`} style={[
+      styles.image,
+      { backgroundColor: c.surfaceAlt },
+    ]} resizeMode="contain"
       onError={() => setError('La vista previa ya no está disponible. Selecciona la foto otra vez.')} />
-      : <View style={styles.placeholder} accessible accessibilityLabel="Sin foto"><Ionicons name="person-outline" size={48} color={c.muted} /></View>}
+      : <View style={[
+        styles.placeholder,
+        { backgroundColor: c.surfaceAlt },
+      ]} accessible accessibilityLabel="Sin foto"><Ionicons name="person-outline" size={48} color={c.muted} /></View>}
     <Text style={s.body}>Vista previa local. No se sube ni se guarda en una cuenta.</Text>
     <Action secondary label={busy ? 'Abriendo galería…' : uri ? 'Reemplazar foto' : 'Seleccionar foto'} onPress={select} disabled={busy} />
     {uri && <Action secondary label="Quitar foto" disabled={busy} onPress={() => { onChange(null); setError(null); }} />}
@@ -53,6 +61,6 @@ export function LocalPhotoPicker({ uri, onChange, label }: { uri: string | null;
   </View>;
 }
 const styles = StyleSheet.create({
-  image: { width: '100%', height: 200, borderRadius: 16, backgroundColor: c.surfaceAlt },
-  placeholder: { width: 96, height: 96, borderRadius: 48, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  image: { width: '100%', height: 200, borderRadius: 16 },
+  placeholder: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' },
 });

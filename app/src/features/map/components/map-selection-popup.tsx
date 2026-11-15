@@ -1,4 +1,5 @@
-import { palette as c } from '@/shared/constants/palette';
+import type { Palette } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { CloseButton } from '@/shared/components/close-button';
 import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -15,6 +16,8 @@ type Props = {
 // This is a sibling of Map inside its clipped viewport, never a native Marker child.
 export function MapSelectionPopup({ point, viewport, title, children, onClose }: Props) {
   const [height, setHeight] = useState(200);
+  const { colors: c } = useAppTheme();
+  const styles = createStyles(c);
   const width = Math.min(260, viewport.width - 128);
   const maxHeight = viewport.height - 64;
   if (width < 100 || maxHeight < 80 || point[0] < 0 || point[1] < 0 ||
@@ -46,12 +49,16 @@ export function MapSelectionPopup({ point, viewport, title, children, onClose }:
   </>;
 }
 
-const styles = StyleSheet.create({
-  connector: { position: 'absolute', height: 2, backgroundColor: c.text },
-  popup: { position: 'absolute', borderRadius: 14, borderWidth: 1, borderColor: c.muted,
-    backgroundColor: c.surface, overflow: 'hidden' },
-  content: { padding: 10, gap: 8 },
-  heading: { paddingHorizontal: 8 },
-  label: { color: c.text, fontSize: 13, fontWeight: '600' },
-  title: { color: c.text, fontSize: 15, fontWeight: '700' },
-});
+function createStyles(c: Palette) {
+  return StyleSheet.create({
+    connector: { position: 'absolute', height: 2, backgroundColor: c.text },
+    popup: {
+      position: 'absolute', borderRadius: 14, borderWidth: 1, borderColor: c.muted,
+      backgroundColor: c.surface, overflow: 'hidden'
+    },
+    content: { padding: 10, gap: 8 },
+    heading: { paddingHorizontal: 8 },
+    label: { color: c.text, fontSize: 13, fontWeight: '600' },
+    title: { color: c.text, fontSize: 15, fontWeight: '700' },
+  });
+}

@@ -1,20 +1,56 @@
+
 import { emailValid } from "../../../shared/validation/contact";
 
-export type Field = "email" | "firstName" | "lastName" | "password";
+export type Field =
+  | "firstName"
+  | "paternalSurname"
+  | "maternalSurname"
+  | "email"
+  | "password"
+  | "confirmPassword";
+
 export type Values = Record<Field, string>;
 export type Errors = Partial<Record<Field, string>>;
 
-export function validateAuth(values: Values, registering: boolean): Errors {
+export function validateAuth(
+  values: Values,
+  registering: boolean,
+): Errors {
   const errors: Errors = {};
-  if (!values.email.trim()) errors.email = "Escribe tu correo.";
-  else if (!emailValid(values.email))
+
+  if (!values.email.trim()) {
+    errors.email = "Escribe tu correo electrónico.";
+  } else if (!emailValid(values.email)) {
     errors.email = "Escribe un correo válido.";
-  if (registering && !values.firstName.trim())
-    errors.firstName = "Escribe tu nombre.";
-  if (registering && !values.lastName.trim())
-    errors.lastName = "Escribe tus apellidos.";
-  // No password policy exists yet. Do not trim or impose length/complexity rules.
-  if (!values.password) errors.password = "Escribe tu contraseña.";
+  }
+
+  if (!values.password) {
+    errors.password = "Escribe tu contraseña.";
+  }
+
+  if (registering) {
+    if (!values.firstName.trim()) {
+      errors.firstName = "Escribe tus nombres.";
+    }
+
+    if (!values.paternalSurname.trim()) {
+      errors.paternalSurname =
+        "Escribe tu apellido paterno.";
+    }
+
+    // El apellido materno es opcional según HU-01.
+
+    if (!values.confirmPassword) {
+      errors.confirmPassword =
+        "Confirma tu contraseña.";
+    } else if (
+      values.password &&
+      values.confirmPassword !== values.password
+    ) {
+      errors.confirmPassword =
+        "Las contraseñas no coinciden.";
+    }
+  }
+
   return errors;
 }
-

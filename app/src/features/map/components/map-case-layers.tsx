@@ -1,5 +1,5 @@
 import { GeoJSONSource, Layer } from "@maplibre/maplibre-react-native";
-import { palette as c } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { pointStatusLabel, type MapCase } from "../utils/map-cases";
 
 type Props = {
@@ -9,6 +9,7 @@ type Props = {
 };
 
 export function MapCaseLayers(props: Props) {
+  const { colors: c } = useAppTheme();
   const { visibleCases, selecting, onSelect: setSelection } = props;
   return (
     <GeoJSONSource
@@ -52,7 +53,7 @@ export function MapCaseLayers(props: Props) {
           "circle-opacity": selecting ? 0.35 : 1,
           "circle-stroke-opacity": selecting ? 0.35 : 1,
           "circle-stroke-width": 3,
-          "circle-stroke-color": c.paper,
+          "circle-stroke-color": c.mapMarkerOutline,
         }}
       />
       <Layer
@@ -66,7 +67,7 @@ export function MapCaseLayers(props: Props) {
           "text-ignore-placement": true,
         }}
         paint={{
-          "text-color": c.paper,
+          "text-color": c.mapMarkerText,
           "text-opacity": selecting ? 0.35 : 1,
         }}
       />

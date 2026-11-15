@@ -1,4 +1,4 @@
-import { Action, formStyles as s } from "@/shared/components/form-controls";
+import { Action, useFormStyles} from "@/shared/components/form-controls";
 import { Image, Text, View } from "react-native";
 import {
   informationModeLabel,
@@ -13,6 +13,7 @@ type Props = {
 };
 
 export function ReportReviewStep(props: Props) {
+  const s = useFormStyles();
   const { report: r, onEdit: edit, onSubmit: submit } = props;
   function summary(label: string, value: string) {
     return (
@@ -67,12 +68,12 @@ export function ReportReviewStep(props: Props) {
         {summary("Cabello", r.hair)}
         {r.marks.length
           ? r.marks.map((mark, i) => (
-              <Text key={mark.id} style={s.body}>
-                Seña {i + 1}: {mark.type || "Tipo no indicado"} ·{" "}
-                {mark.area || "Zona no indicada"} ·{" "}
-                {mark.description || "Sin descripción"}
-              </Text>
-            ))
+            <Text key={mark.id} style={s.body}>
+              Seña {i + 1}: {mark.type || "Tipo no indicado"} ·{" "}
+              {mark.area || "Zona no indicada"} ·{" "}
+              {mark.description || "Sin descripción"}
+            </Text>
+          ))
           : summary("Señas", "No indicadas")}
         {summary("Ropa", r.clothes)}
         {summary("Calzado", r.shoes)}

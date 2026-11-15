@@ -1,4 +1,4 @@
-import { Action, Choices, formStyles as s } from "@/shared/components/form-controls";
+import { Action, Choices, useFormStyles } from "@/shared/components/form-controls";
 import { Text } from "react-native";
 import { isUnknownInformation } from "../model/report-options";
 import { createReportFields, type ReportStepProps } from "./report-step-fields";
@@ -6,6 +6,7 @@ import { createReportFields, type ReportStepProps } from "./report-step-fields";
 type Props = ReportStepProps & { onPickLocation: () => void };
 
 export function ReportLocationStep(props: Props) {
+  const s = useFormStyles();
   const { report: r, errors, onUpdate: update } = props;
   const { field, choose, chooseInformation } = createReportFields(props);
   const coordinateText = r.coordinate ? "Elegida en el mapa" : "Sin seleccionar";

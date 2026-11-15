@@ -3,26 +3,47 @@ import { MapFooter } from "../components/map-footer";
 import { MapReportPopup } from "../components/map-report-popup";
 import { MapToolbar } from "../components/map-toolbar";
 import { MapCaseLayers } from "../components/map-case-layers";
-import { palette as c } from "@/shared/constants/palette";
 import { Camera, Map } from "@maplibre/maplibre-react-native";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { Palette } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
+  Appearance,
   Pressable,
   StyleSheet,
   Text,
   View,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MapFilterPanel, type FilterPanel } from "../components/map-filter-panel";
 import { filterCases } from "@/features/map/utils/map-cases";
 import { DEMO_CASES } from "@/features/reports/fixtures/demo-cases";
-import { INITIAL_VIEW, MAP_STYLE } from "@/features/map/constants/map";
+import {
+  INITIAL_VIEW,
+  MAP_STYLE,
+  MAP_STYLE_DARK,
+} from "@/features/map/constants/map";
 import { CASE_STATUSES, type CaseStatus } from "@/features/reports/model/case-status";
 
 export default function MapPrototype() {
+  // Tema centralizado de NLDMAP.
+  const {
+    colors: c,
+    isDark,
+    toggleTheme,
+  } = useAppTheme();
+
+  // Estilos que se actualizan al cambiar de tema.
+  const styles = useMemo(
+    () => createStyles(c),
+    [c],
+  );
+
+
   const [caseStatuses, setCaseStatuses] = useState<CaseStatus[]>([
     ...CASE_STATUSES,
   ]);
@@ -53,16 +74,41 @@ export default function MapPrototype() {
 
   return (
     <SafeAreaView
-      style={styles.screen}
+      style={[
+        styles.screen,
+        { backgroundColor: c.surfaceAlt },
+      ]}
       edges={["top", "bottom", "left", "right"]}
     >
       <View style={styles.header}>
         <View style={styles.topRow}>
-          <Text accessibilityRole="header" style={styles.title}>
+          <Text accessibilityRole="header" style={[styles.title, { color: c.text }]}>
             NLDMAP
           </Text>
+
           <View style={styles.topActions}>
-            {/* No authentication provider exists yet: always open the signed-out screen. */}
+            {/* Botón de modo claro / oscuro */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                isDark ? "Activar modo claro" : "Activar modo oscuro"
+              }
+              accessibilityState={{ selected: isDark }}
+              onPress={toggleTheme}
+              style={({ pressed }) => [
+                styles.topButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons
+                name={isDark ? "sunny-outline" : "moon-outline"}
+                size={24}
+                color={isDark ? "#F3D484" : c.text}
+                accessible={false}
+              />
+            </Pressable>
+
+            {/* Botón de perfil */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Perfil. Abrir Iniciar sesión"
@@ -72,23 +118,24 @@ export default function MapPrototype() {
               }}
               style={({ pressed }) => [
                 styles.topButton,
+                { backgroundColor: c.surfaceAlt },
                 pressed && styles.pressed,
               ]}
             >
               <Ionicons
                 name="person-circle-outline"
-                size={22}
+                size={24}
                 color={c.text}
-                style={{ width: 22, height: 22 }}
                 accessible={false}
                 accessibilityElementsHidden
                 importantForAccessibility="no"
               />
             </Pressable>
           </View>
+
         </View>
-        <Text style={styles.body}>Mapa de reportes</Text>
-        <Text style={styles.caption}>DEMOSTRACIÓN · Casos ficticios</Text>
+        <Text style={[styles.body, { color: c.muted }]}>Mapa de reportes</Text>
+        <Text style={[styles.caption, { color: c.muted }]}>DEMOSTRACIÓN · Casos ficticios</Text>
       </View>
       <View
         style={styles.viewport}
@@ -100,7 +147,7 @@ export default function MapPrototype() {
         <Map
           ref={mapRef}
           style={StyleSheet.absoluteFill}
-          mapStyle={MAP_STYLE}
+          mapStyle={isDark ? MAP_STYLE_DARK : MAP_STYLE}
           attribution
           compass
           compassPosition={{ top: northTop, right: 24 }}
@@ -184,43 +231,45 @@ export default function MapPrototype() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.surface },
-  header: { paddingHorizontal: 16, paddingVertical: 8, gap: 2 },
-  topRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  topActions: { flexDirection: "row", gap: 8 },
-  topButton: {
-    minWidth: 56,
-    minHeight: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 6,
-    gap: 2,
-    borderRadius: 12,
-    backgroundColor: c.surfaceAlt,
-  },
-  title: { color: c.text, fontSize: 21, fontWeight: "800", flexShrink: 1 },
-  body: { color: c.muted, fontSize: 12, lineHeight: 18 },
-  caption: { color: c.muted, fontSize: 11, lineHeight: 16 },
-  viewport: { flex: 1, overflow: "hidden", backgroundColor: c.mapPlaceholder },
-  // Separate clear zones for the compass (top) and attribution (bottom).
-  target: {
-    position: "absolute",
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 3,
-    borderColor: c.draft,
-    backgroundColor: "#FFFFFF99",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  targetDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: c.draft },
-  pressed: { opacity: 0.7 },
-});
+function createStyles(c: Palette) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.surface },
+    header: { paddingHorizontal: 16, paddingVertical: 8, gap: 2 },
+    topRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    topActions: { flexDirection: "row", gap: 8 },
+    topButton: {
+      minWidth: 56,
+      minHeight: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 6,
+      gap: 2,
+      borderRadius: 12,
+      backgroundColor: c.surfaceAlt,
+    },
+    title: { color: c.text, fontSize: 21, fontWeight: "800", flexShrink: 1 },
+    body: { color: c.muted, fontSize: 12, lineHeight: 18 },
+    caption: { color: c.muted, fontSize: 11, lineHeight: 16 },
+    viewport: { flex: 1, overflow: "hidden", backgroundColor: c.mapPlaceholder },
+    // Separate clear zones for the compass (top) and attribution (bottom).
+    target: {
+      position: "absolute",
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 3,
+      borderColor: c.draft,
+      backgroundColor: "#FFFFFF99",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    targetDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: c.draft },
+    pressed: { opacity: 0.7 },
+  });
+}

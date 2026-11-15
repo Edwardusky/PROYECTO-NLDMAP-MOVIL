@@ -1,10 +1,11 @@
-import { Action, formStyles as s } from "@/shared/components/form-controls";
+import { Action, useFormStyles } from "@/shared/components/form-controls";
 import { Text } from "react-native";
 import { createReportFields, type ReportStepProps } from "./report-step-fields";
 
 type Props = ReportStepProps & { onUseProfile: () => void };
 
 export function ReportContactStep(props: Props) {
+  const s = useFormStyles();
   const { field, choose } = createReportFields(props);
   return (
     <>

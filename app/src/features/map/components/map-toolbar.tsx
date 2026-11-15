@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { palette as c } from "@/shared/constants/palette";
+import type { Palette } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
 import type { FilterPanel } from "./map-filter-panel";
 
 type Props = {
@@ -13,6 +14,8 @@ type Props = {
 };
 
 export function MapToolbar(props: Props) {
+  const { colors: c } = useAppTheme();
+  const styles = createStyles(c);
   const { height, northTop, panel, caseCount, showSightings, onOpen: setPanel } = props;
   return (
     <ScrollView
@@ -85,34 +88,36 @@ export function MapToolbar(props: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  rail: { position: "absolute", right: 12, bottom: 48, width: 88 },
-  controls: { gap: 8, flexGrow: 1, justifyContent: "flex-end" },
-  control: {
-    minWidth: 76,
-    minHeight: 64,
-    padding: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  controlPressed: { transform: [{ scale: 0.9 }], opacity: 0.75 },
-  activeDot: {
-    position: "absolute",
-    bottom: 4,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: c.draft,
-    borderWidth: 1,
-    borderColor: c.paper,
-  },
-  floatingLabel: {
-    color: c.text,
-    backgroundColor: c.surface,
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    fontSize: 12,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-});
+function createStyles(c: Palette) {
+  return StyleSheet.create({
+    rail: { position: "absolute", right: 12, bottom: 48, width: 88 },
+    controls: { gap: 8, flexGrow: 1, justifyContent: "flex-end" },
+    control: {
+      minWidth: 76,
+      minHeight: 64,
+      padding: 8,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    controlPressed: { transform: [{ scale: 0.9 }], opacity: 0.75 },
+    activeDot: {
+      position: "absolute",
+      bottom: 4,
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: c.draft,
+      borderWidth: 1,
+      borderColor: c.paper,
+    },
+    floatingLabel: {
+      color: c.text,
+      backgroundColor: c.surface,
+      borderRadius: 4,
+      paddingHorizontal: 4,
+      fontSize: 12,
+      fontWeight: "700",
+      textAlign: "center",
+    },
+  });
+}

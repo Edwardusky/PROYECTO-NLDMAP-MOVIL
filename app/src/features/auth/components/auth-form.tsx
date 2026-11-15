@@ -1,4 +1,5 @@
-import { palette as c } from "@/shared/constants/palette";
+import type { Palette } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { Link, useFocusEffect } from "expo-router";
 import { useCallback, useRef, useState } from "react";
@@ -22,41 +23,83 @@ import {
   type Errors,
 } from "../model/auth-validation";
 
-// Preserve the existing export for consumers of the form module.
 export { validateAuth } from "../model/auth-validation";
+
+type PasswordField = "password" | "confirmPassword";
+
+const labels: Record<Field, string> = {
+  firstName: "Nombres *",
+  paternalSurname: "Apellido paterno *",
+  maternalSurname: "Apellido materno (opcional)",
+  email: "Correo electrónico *",
+  password: "Contraseña *",
+  confirmPassword: "Confirmar contraseña *",
+};
+
+const registrationFields: Field[] = [
+  "firstName",
+  "paternalSurname",
+  "maternalSurname",
+  "email",
+  "password",
+  "confirmPassword",
+];
+
+const loginFields: Field[] = [
+  "email",
+  "password",
+];
 
 export default function AuthForm({
   registering = false,
 }: {
   registering?: boolean;
 }) {
+  const { colors: c } = useAppTheme();
+  const styles = createStyles(c);
   const headerHeight = useHeaderHeight();
-  const [values, setValues] = useState<Values>({
-    email: "",
-    firstName: "",
-    lastName: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<Errors>({});
-  const [visible, setVisible] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const inputs = useRef<Partial<Record<Field, TextInput | null>>>({});
-  const fields: Field[] = registering
-    ? ["email", "firstName", "lastName", "password"]
-    : ["email", "password"];
-  const labels: Record<Field, string> = {
-    email: "Correo",
-    firstName: "Nombre",
-    lastName: "Apellidos",
-    password: "Contraseña",
-  };
 
-  // Passwords only live in component memory and are cleared when leaving the screen.
+  const [values, setValues] = useState<Values>({
+    firstName: "",
+    paternalSurname: "",
+    maternalSurname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [errors, setErrors] = useState<Errors>({});
+  const [notice, setNotice] = useState<string | null>(
+    null,
+  );
+
+  const [visible, setVisible] = useState<
+    Record<PasswordField, boolean>
+  >({
+    password: false,
+    confirmPassword: false,
+  });
+
+  const inputs = useRef<
+    Partial<Record<Field, TextInput | null>>
+  >({});
+
+  const fields = registering
+    ? registrationFields
+    : loginFields;
+
   useFocusEffect(
     useCallback(
       () => () => {
-        setValues((current) => ({ ...current, password: "" }));
-        setVisible(false);
+        setValues((current) => ({
+          ...current,
+          password: "",
+          confirmPassword: "",
+        }));
+        setVisible({
+          password: false,
+          confirmPassword: false,
+        });
         setErrors({});
         setNotice(null);
       },
@@ -66,29 +109,77 @@ export default function AuthForm({
 
   function submit() {
     const nextErrors = validateAuth(values, registering);
+
     setErrors(nextErrors);
     setNotice(null);
-    const firstInvalid = fields.find((field) => nextErrors[field]);
+
+    const firstInvalid = fields.find(
+      (field) => nextErrors[field],
+    );
+
     if (firstInvalid) {
       inputs.current[firstInvalid]?.focus();
       return;
     }
+
     Keyboard.dismiss();
-    setValues((current) => ({ ...current, password: "" }));
-    setVisible(false);
+
+    setValues((current) => ({
+      ...current,
+      password: "",
+      confirmPassword: "",
+    }));
+
+    setVisible({
+      password: false,
+      confirmPassword: false,
+    });
+
+    // Sin integración con API: no se crea una cuenta real.
     setNotice("Función no disponible");
   }
 
   function pendingOAuth() {
     Keyboard.dismiss();
-    setNotice("El acceso externo no está disponible.");
+    setNotice(
+      "El acceso externo no está disponible.",
+    );
+  }
+
+  function updateField(field: Field, text: string) {
+    setValues((current) => ({
+      ...current,
+      [field]: text,
+    }));
+
+    setErrors((current) => ({
+      ...current,
+      [field]: undefined,
+      ...(field === "password"
+        ? { confirmPassword: undefined }
+        : {}),
+    }));
+
+    setNotice(null);
+  }
+
+  function togglePassword(field: PasswordField) {
+    setVisible((current) => ({
+      ...current,
+      [field]: !current[field],
+    }));
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={["bottom", "left", "right"]}>
+    <SafeAreaView
+      style={styles.screen}
+      edges={["bottom", "left", "right"]}
+    >
       <KeyboardAvoidingView
         style={styles.screen}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={
+          Platform.OS === "ios" ? "padding" : "height"
+        }
         keyboardVerticalOffset={headerHeight}
       >
         <ScrollView
@@ -97,17 +188,45 @@ export default function AuthForm({
           keyboardDismissMode="on-drag"
           automaticallyAdjustKeyboardInsets={false}
         >
-          <Text accessibilityRole="header" style={styles.title}>
-            {registering ? "Registro" : "Acceso"}
+          <Text
+            accessibilityRole="header"
+            style={styles.title}
+          >
+            {registering
+              ? "Crear cuenta"
+              : "Iniciar sesión"}
           </Text>
+
           <View style={styles.card}>
             {fields.map((field, index) => {
-              const password = field === "password";
+              const isPassword =
+                field === "password" ||
+                field === "confirmPassword";
+
+              const passwordField = isPassword
+                ? (field as PasswordField)
+                : null;
+
+              const isLast = index === fields.length - 1;
+
               return (
                 <View key={field} style={styles.field}>
-                  <Text nativeID={`${field}-label`} style={styles.label}>
+                  <Text
+                    nativeID={`${field}-label`}
+                    style={styles.label}
+                  >
                     {labels[field]}
                   </Text>
+
+                  {registering &&
+                    field === "password" && (
+                      <Text style={styles.body}>
+                        En esta demostración se comprueba
+                        que la contraseña no esté vacía
+                        y coincida con su confirmación.
+                      </Text>
+                    )}
+
                   <TextInput
                     ref={(input) => {
                       inputs.current[field] = input;
@@ -116,46 +235,69 @@ export default function AuthForm({
                     accessibilityLabelledBy={`${field}-label`}
                     accessibilityHint={errors[field]}
                     value={values[field]}
-                    onChangeText={(text) => {
-                      setValues((current) => ({ ...current, [field]: text }));
-                      setErrors((current) => ({
-                        ...current,
-                        [field]: undefined,
-                      }));
-                      setNotice(null);
-                    }}
+                    onChangeText={(text) =>
+                      updateField(field, text)
+                    }
                     keyboardType={
-                      field === "email" ? "email-address" : "default"
+                      field === "email"
+                        ? "email-address"
+                        : "default"
                     }
                     autoCapitalize={
-                      field === "email" || password ? "none" : "words"
+                      field === "email" || isPassword
+                        ? "none"
+                        : "words"
                     }
                     autoCorrect={false}
                     autoComplete="off"
-                    secureTextEntry={password && !visible}
-                    returnKeyType={password ? "done" : "next"}
-                    submitBehavior={password ? "blurAndSubmit" : "submit"}
-                    onSubmitEditing={() =>
-                      password
-                        ? submit()
-                        : inputs.current[fields[index + 1]]?.focus()
+                    secureTextEntry={
+                      passwordField !== null &&
+                      !visible[passwordField]
                     }
-                    style={[styles.input, errors[field] && styles.invalid]}
+                    returnKeyType={
+                      isLast ? "done" : "next"
+                    }
+                    submitBehavior={
+                      isLast
+                        ? "blurAndSubmit"
+                        : "submit"
+                    }
+                    onSubmitEditing={() => {
+                      if (isLast) {
+                        submit();
+                      } else {
+                        inputs.current[
+                          fields[index + 1]
+                        ]?.focus();
+                      }
+                    }}
+                    style={[
+                      styles.input,
+                      errors[field] && styles.invalid,
+                    ]}
                   />
-                  {password && (
+
+                  {passwordField && (
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={
-                        visible ? "Ocultar contraseña" : "Mostrar contraseña"
+                        visible[passwordField]
+                          ? `Ocultar ${labels[field]}`
+                          : `Mostrar ${labels[field]}`
                       }
-                      onPress={() => setVisible((current) => !current)}
+                      onPress={() =>
+                        togglePassword(passwordField)
+                      }
                       style={styles.visibility}
                     >
                       <Text style={styles.linkText}>
-                        {visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        {visible[passwordField]
+                          ? "Ocultar contraseña"
+                          : "Mostrar contraseña"}
                       </Text>
                     </Pressable>
                   )}
+
                   {errors[field] && (
                     <Text
                       accessibilityRole="alert"
@@ -168,6 +310,7 @@ export default function AuthForm({
                 </View>
               );
             })}
+
             <Pressable
               accessibilityRole="button"
               onPress={submit}
@@ -177,9 +320,12 @@ export default function AuthForm({
               ]}
             >
               <Text style={styles.buttonText}>
-                {registering ? "Crear cuenta" : "Iniciar sesión"}
+                {registering
+                  ? "Crear cuenta"
+                  : "Iniciar sesión"}
               </Text>
             </Pressable>
+
             {notice && (
               <Text
                 accessibilityRole="alert"
@@ -189,21 +335,13 @@ export default function AuthForm({
                 {notice}
               </Text>
             )}
-            {/* <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Google · No disponible"
-              onPress={pendingOAuth}
-              style={({ pressed }) => [
-                styles.button,
-                pressed && styles.pressed,
-              ]}
-            >
-               <Text style={styles.buttonText}>Google · No disponible</Text> 
-            </Pressable> */}
+
             {Platform.OS === "ios" && (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Acceso externo · No disponible"
+                accessibilityLabel={
+                  "Acceso externo · No disponible"
+                }
                 onPress={pendingOAuth}
                 style={({ pressed }) => [
                   styles.button,
@@ -216,8 +354,18 @@ export default function AuthForm({
               </Pressable>
             )}
           </View>
-          <Link href={registering ? "/login" : "/register"} replace asChild>
-            <Pressable accessibilityRole="link" style={styles.link}>
+
+          <Link
+            href={
+              registering ? "/login" : "/register"
+            }
+            replace
+            asChild
+          >
+            <Pressable
+              accessibilityRole="link"
+              style={styles.link}
+            >
               <Text style={styles.linkText}>
                 {registering
                   ? "Ver formulario de acceso"
@@ -225,10 +373,16 @@ export default function AuthForm({
               </Text>
             </Pressable>
           </Link>
+
           {!registering && (
             <Link href="/profile" asChild>
-              <Pressable accessibilityRole="link" style={styles.link}>
-                <Text style={styles.linkText}>Ver Perfil</Text>
+              <Pressable
+                accessibilityRole="link"
+                style={styles.link}
+              >
+                <Text style={styles.linkText}>
+                  Ver Perfil
+                </Text>
               </Pressable>
             </Link>
           )}
@@ -238,61 +392,91 @@ export default function AuthForm({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.surface },
-  content: { padding: 20, gap: 20 },
-  title: { color: c.text, fontSize: 26, fontWeight: "800" },
-  card: {
-    padding: 20,
-    borderRadius: 20,
-    backgroundColor: c.surfaceAlt,
-    gap: 16,
-  },
-  body: { color: c.muted, fontSize: 15, lineHeight: 24 },
-  field: { gap: 6 },
-  label: { color: c.text, fontSize: 15, fontWeight: "600" },
-  input: {
-    minHeight: 48,
-    padding: 12,
-    backgroundColor: c.paper,
-    color: c.text,
-    borderWidth: 1,
-    borderColor: c.muted,
-    borderRadius: 10,
-    fontSize: 16,
-  },
-  invalid: { borderColor: c.error },
-  error: { color: c.error, fontSize: 14, lineHeight: 20 },
-  visibility: {
-    minHeight: 44,
-    justifyContent: "center",
-    alignSelf: "flex-start",
-  },
-  button: {
-    minHeight: 48,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: c.text,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    color: c.paper,
-    fontSize: 15,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  link: {
-    minHeight: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 12,
-  },
-  linkText: {
-    color: c.text,
-    fontSize: 15,
-    textDecorationLine: "underline",
-    textAlign: "center",
-  },
-  pressed: { opacity: 0.7 },
-});
+function createStyles(c: Palette) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.surface,
+    },
+    content: {
+      padding: 20,
+      gap: 20,
+    },
+    title: {
+      color: c.text,
+      fontSize: 26,
+      fontWeight: "800",
+    },
+    card: {
+      padding: 20,
+      borderRadius: 20,
+      backgroundColor: c.surfaceAlt,
+      gap: 16,
+    },
+    body: {
+      color: c.muted,
+      fontSize: 15,
+      lineHeight: 24,
+    },
+    field: {
+      gap: 6,
+    },
+    label: {
+      color: c.text,
+      fontSize: 15,
+      fontWeight: "600",
+    },
+    input: {
+      minHeight: 48,
+      padding: 12,
+      backgroundColor: c.paper,
+      color: c.text,
+      borderWidth: 1,
+      borderColor: c.muted,
+      borderRadius: 10,
+      fontSize: 16,
+    },
+    invalid: {
+      borderColor: c.error,
+    },
+    error: {
+      color: c.error,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    visibility: {
+      minHeight: 44,
+      justifyContent: "center",
+      alignSelf: "flex-start",
+    },
+    button: {
+      minHeight: 48,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: c.text,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    buttonText: {
+      color: c.paper,
+      fontSize: 15,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+    link: {
+      minHeight: 48,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 12,
+    },
+    linkText: {
+      color: c.text,
+      fontSize: 15,
+      textDecorationLine: "underline",
+      textAlign: "center",
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+  });
+}

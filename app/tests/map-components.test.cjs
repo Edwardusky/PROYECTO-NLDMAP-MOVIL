@@ -18,6 +18,24 @@ function load(name) {
   });
   const localRequire = specifier => {
     if (specifier === "react/jsx-runtime") return require(specifier);
+    if (
+      specifier ===
+      "@/shared/theme/app-theme-context"
+    ) {
+      const { lightPalette } = require(
+        "../src/shared/constants/palette.ts"
+      );
+
+      return {
+        useAppTheme: () => ({
+          colors: lightPalette,
+          mode: "light",
+          isDark: false,
+          toggleTheme() { },
+          setMode() { },
+        }),
+      };
+    }
     if (specifier === "react-native") return {
       Text: "Text", View: "View", Pressable: "Pressable", ScrollView: "ScrollView",
       StyleSheet: { create: styles => styles, absoluteFill: { position: "absolute" } },
@@ -66,7 +84,7 @@ test("case layers retain IDs, coordinates, exact coincidence labels and marker s
   const selecting = Layers({ visibleCases: DEMO_CASES, selecting: true, onSelect() { assert.fail("selection disabled"); } });
   assert.equal(selecting.props.onPress, undefined);
   assert.equal(nodes(selecting).find(node => node.props.id === "demo-points").props.paint["circle-opacity"], 0.35);
-  const filtered = Layers({ visibleCases: filterCases(DEMO_CASES, ["Localizados"]), selecting: false, onSelect() {} });
+  const filtered = Layers({ visibleCases: filterCases(DEMO_CASES, ["Localizados"]), selecting: false, onSelect() { } });
   assert.deepEqual(filtered.props.data.features.map(item => item.properties.label), ["L", "L"]);
 });
 

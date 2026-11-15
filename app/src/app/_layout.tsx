@@ -1,6 +1,19 @@
 
-import { palette as c } from "@/shared/constants/palette";
-import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import { useMemo } from "react";
+
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+} from "expo-router";
+
+import { StatusBar } from "expo-status-bar";
+
+import {
+  AppThemeProvider,
+  useAppTheme,
+} from "@/shared/theme/app-theme-context";
 
 import { ProfileProvider } from "@/features/profile/state/profile-context";
 import { ReportDraftProvider } from "@/features/reports/state/report-draft-context";
@@ -9,9 +22,30 @@ export const unstable_settings = {
   initialRouteName: "index",
 };
 
-export default function RootLayout() {
+function AppNavigator() {
+  const { colors: c, mode, isDark } = useAppTheme();
+
+  const navigationTheme = useMemo(() => {
+    const base = isDark ? DarkTheme : DefaultTheme;
+
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: c.action,
+        background: c.surface,
+        card: c.surface,
+        text: c.text,
+        border: c.divider,
+        notification: c.error,
+      },
+    };
+  }, [c, isDark]);
+
   return (
-    <ThemeProvider value={DefaultTheme}>
+    <ThemeProvider value={navigationTheme}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+
       <ProfileProvider>
         <ReportDraftProvider>
           <Stack
@@ -58,5 +92,13 @@ export default function RootLayout() {
         </ReportDraftProvider>
       </ProfileProvider>
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <AppNavigator />
+    </AppThemeProvider>
   );
 }

@@ -3,7 +3,7 @@ import {
   Action,
   Field,
   FormScreen,
-  formStyles as s,
+  useFormStyles,
 } from "@/shared/components/form-controls";
 import { LocalPhotoPicker } from "@/shared/components/local-photo-picker";
 import { useProfile } from "@/features/profile/state/profile-context";
@@ -12,6 +12,8 @@ import { emailValid, phoneValid } from "@/shared/validation/contact";
 import { router } from "expo-router";
 
 export default function ProfileScreen() {
+  const s = useFormStyles();
+
   const { profile, setProfile } = useProfile();
   function field(
     key: Exclude<keyof Profile, "photo">,

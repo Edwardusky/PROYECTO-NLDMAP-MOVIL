@@ -9,7 +9,7 @@ import {
 import {
   Action,
   FormScreen,
-  formStyles as s,
+  useFormStyles,
 } from "@/shared/components/form-controls";
 import { useProfile } from "@/features/profile/state/profile-context";
 import { ReportContactStep } from "../components/report-contact-step";
@@ -35,6 +35,7 @@ const sections = [
 ];
 
 export default function CreateReportScreen() {
+  const s = useFormStyles();
   const { profile } = useProfile();
   const {
     report: r,

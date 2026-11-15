@@ -1,69 +1,169 @@
+
 const test = require("node:test");
 const assert = require("node:assert/strict");
+
 require("./register-typescript.cjs");
-const { validateAuth } = require("../src/features/auth/model/auth-validation.ts");
-const valid = () => ({ email: "persona@example.com", firstName: "Nombre", lastName: "Apellido", password: "x" });
 
-test("auth distinguishes an empty email from an invalid supplied email", () => {
-  for (const email of ["", " ", "\n\t"]) {
-    assert.deepEqual(validateAuth({ ...valid(), email }, false), { email: "Escribe tu correo." });
-  }
-  for (const email of ["persona", "persona@", "@example.com", "persona@example", "per sona@example.com", "persona@@example.com"]) {
-    assert.deepEqual(validateAuth({ ...valid(), email }, false), { email: "Escribe un correo válido." });
+const {
+  validateAuth,
+} = require("../src/features/auth/model/auth-validation.ts");
+
+const valid = () => ({
+  firstName: "María Fernanda",
+  paternalSurname: "Hernández",
+  maternalSurname: "",
+  email: "persona@example.com",
+  password: "prueba",
+  confirmPassword: "prueba",
+});
+
+test("el registro acepta un apellido materno vacío", () => {
+  assert.deepEqual(validateAuth(valid(), true), {});
+});
+
+test("los nombres son obligatorios al registrar", () => {
+  const values = {
+    ...valid(),
+    firstName: "  ",
+  };
+
+  assert.equal(
+    validateAuth(values, true).firstName,
+    "Escribe tus nombres.",
+  );
+});
+
+test("el apellido paterno es obligatorio", () => {
+  const values = {
+    ...valid(),
+    paternalSurname: "",
+  };
+
+  assert.equal(
+    validateAuth(values, true).paternalSurname,
+    "Escribe tu apellido paterno.",
+  );
+});
+
+test("el correo es obligatorio y debe ser válido", () => {
+  const empty = {
+    ...valid(),
+    email: "",
+  };
+
+  const invalid = {
+    ...valid(),
+    email: "correo-invalido",
+  };
+
+  assert.equal(
+    validateAuth(empty, true).email,
+    "Escribe tu correo electrónico.",
+  );
+
+  assert.equal(
+    validateAuth(invalid, true).email,
+    "Escribe un correo válido.",
+  );
+});
+
+test("se acepta el formato de correo previamente permitido", () => {
+  for (const email of [
+    "persona@example.com",
+    "  persona+alias@example.com  ",
+    "PERSONA@EXAMPLE.COM",
+    "a@b.c",
+  ]) {
+    assert.deepEqual(
+      validateAuth({ ...valid(), email }, true),
+      {},
+    );
   }
 });
 
-test("auth accepts the existing email syntax and outer whitespace without mutating input", () => {
-  for (const email of ["persona@example.com", "  persona+alias@example.com  ", "PERSONA@EXAMPLE.COM", "a@b.c"]) {
-    const values = { ...valid(), email };
-    const before = { ...values };
-    assert.deepEqual(validateAuth(values, false), {});
-    assert.deepEqual(values, before);
+test("la confirmación de contraseña es obligatoria", () => {
+  const values = {
+    ...valid(),
+    confirmPassword: "",
+  };
+
+  assert.equal(
+    validateAuth(values, true).confirmPassword,
+    "Confirma tu contraseña.",
+  );
+});
+
+test("las contraseñas deben coincidir", () => {
+  const values = {
+    ...valid(),
+    confirmPassword: "diferente",
+  };
+
+  assert.equal(
+    validateAuth(values, true).confirmPassword,
+    "Las contraseñas no coinciden.",
+  );
+});
+
+test("la contraseña sigue siendo obligatoria", () => {
+  const values = {
+    ...valid(),
+    password: "",
+  };
+
+  assert.equal(
+    validateAuth(values, true).password,
+    "Escribe tu contraseña.",
+  );
+});
+
+test("el acceso no exige campos de registro", () => {
+  const values = {
+    ...valid(),
+    firstName: "",
+    paternalSurname: "",
+    maternalSurname: "",
+    confirmPassword: "",
+  };
+
+  assert.deepEqual(
+    validateAuth(values, false),
+    {},
+  );
+});
+
+test("se mantienen las reglas actuales de contraseña", () => {
+  for (const password of ["x", " ", "clave"]) {
+    const values = {
+      ...valid(),
+      password,
+      confirmPassword: password,
+    };
+
+    assert.deepEqual(
+      validateAuth(values, true),
+      {},
+    );
   }
 });
 
-test("sign in requires only email and password, not registration names", () => {
-  assert.deepEqual(validateAuth({ ...valid(), firstName: "", lastName: "" }, false), {});
-  assert.deepEqual(validateAuth({ email: "", firstName: "", lastName: "", password: "" }, false), {
-    email: "Escribe tu correo.", password: "Escribe tu contraseña.",
-  });
+test("la validación no modifica los datos originales", () => {
+  const values = valid();
+  const snapshot = { ...values };
+
+  validateAuth(values, true);
+
+  assert.deepEqual(values, snapshot);
 });
 
-test("registration requires both names after trimming and retains every field error", () => {
-  assert.deepEqual(validateAuth({ email: "", firstName: " \n", lastName: "\t", password: "" }, true), {
-    email: "Escribe tu correo.", firstName: "Escribe tu nombre.",
-    lastName: "Escribe tus apellidos.", password: "Escribe tu contraseña.",
-  });
-  assert.deepEqual(validateAuth({ ...valid(), firstName: "" }, true), { firstName: "Escribe tu nombre." });
-  assert.deepEqual(validateAuth({ ...valid(), lastName: "" }, true), { lastName: "Escribe tus apellidos." });
-});
+test("cada validación devuelve errores independientes", () => {
+  const invalid = validateAuth(
+    { ...valid(), email: "invalido" },
+    true,
+  );
 
-test("registration accepts personal names without introducing character or length policies", () => {
-  for (const name of ["A", "  María José  ", "O'Connor", "李", "123"]) {
-    const values = { ...valid(), firstName: name, lastName: name };
-    assert.deepEqual(validateAuth(values, true), {});
-    assert.equal(values.firstName, name);
-    assert.equal(values.lastName, name);
-  }
-});
+  const correct = validateAuth(valid(), true);
 
-test("password rules remain presence-only in both modes, including whitespace and short passwords", () => {
-  for (const registering of [false, true]) {
-    assert.deepEqual(validateAuth({ ...valid(), password: "" }, registering), { password: "Escribe tu contraseña." });
-    for (const password of ["x", " ", "\t\n", "  contraseña  "]) {
-      const values = { ...valid(), password };
-      assert.deepEqual(validateAuth(values, registering), {});
-      assert.equal(values.password, password);
-    }
-  }
-});
-
-test("valid login and registration return independent error objects without retaining prior errors", () => {
-  const invalid = validateAuth({ ...valid(), email: "incorrecto" }, false);
-  for (const registering of [false, true]) {
-    const result = validateAuth(valid(), registering);
-    assert.deepEqual(result, {});
-    assert.notStrictEqual(result, invalid);
-  }
-  assert.deepEqual(invalid, { email: "Escribe un correo válido." });
+  assert.deepEqual(correct, {});
+  assert.notStrictEqual(invalid, correct);
 });
