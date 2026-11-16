@@ -6,6 +6,8 @@ import { locateOnce } from '@/features/map/utils/device-location';
 
 export function useDeviceLocation(onPosition: (point: [number, number], approximate: boolean) => void) {
   const [loading, setLoading] = useState(false);
+  const [coordinate, setCoordinate] =
+    useState<[number, number] | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [settings, setSettings] = useState(false);
   const requestId = useRef(0);
@@ -22,7 +24,8 @@ export function useDeviceLocation(onPosition: (point: [number, number], approxim
       const Location = await loadLocation();
       if (requestId.current !== id) return;
       const result = await Promise.race([
-        locateOnce({ permissions: Location.getForegroundPermissionsAsync, request: Location.requestForegroundPermissionsAsync,
+        locateOnce({
+          permissions: Location.getForegroundPermissionsAsync, request: Location.requestForegroundPermissionsAsync,
           services: Location.hasServicesEnabledAsync,
           position: () => Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced, mayShowUserSettingsDialog: false }),
         }, () => requestId.current === id),
@@ -30,7 +33,11 @@ export function useDeviceLocation(onPosition: (point: [number, number], approxim
       ]);
       if (requestId.current !== id) return;
       if (result.kind === 'position') {
-        latestOnPosition.current(result.coordinate, result.approximate);
+        latestOnPosition.current(
+          result.coordinate,
+          result.approximate
+        );
+        setCoordinate(result.coordinate);
         setMessage(`${result.approximate ? 'Ubicación aproximada' : 'Ubicación obtenida'}${result.accuracy === null ? ' · Precisión no disponible' : ` · Margen estimado: ${Math.round(result.accuracy)} m`}.`);
       } else if (result.kind === 'denied') {
         setSettings(result.settings); setMessage(result.settings ? 'Permiso de ubicación denegado. Puedes habilitarlo en Ajustes.' : 'Permiso de ubicación denegado. Puedes volver a intentarlo.');
@@ -47,5 +54,12 @@ export function useDeviceLocation(onPosition: (point: [number, number], approxim
     }
   }
   function openSettings() { Linking.openSettings().catch(() => setMessage('No se pudieron abrir los Ajustes. Ábrelos desde tu teléfono.')); }
-  return { loading, message, settings, locate, openSettings };
+  return {
+    coordinate,
+    loading,
+    message,
+    settings,
+    locate,
+    openSettings,
+  };
 }

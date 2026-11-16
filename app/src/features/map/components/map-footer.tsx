@@ -92,9 +92,7 @@ export function MapFooter(props: Props) {
       <Text style={styles.emptyTitle}>
         {visibleCount} reportes visibles
       </Text>
-      <Text style={styles.caption}>
-        B · En búsqueda L · Localizados B/L · Ambos
-      </Text>
+  
       {mapFailed && (
         <Text accessibilityRole="alert" style={styles.body}>
           No se pudo cargar el mapa. Revisa la conexión y vuelve a abrir esta

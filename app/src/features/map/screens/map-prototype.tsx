@@ -3,7 +3,12 @@ import { MapFooter } from "../components/map-footer";
 import { MapReportPopup } from "../components/map-report-popup";
 import { MapToolbar } from "../components/map-toolbar";
 import { MapCaseLayers } from "../components/map-case-layers";
-import { Camera, Map } from "@maplibre/maplibre-react-native";
+import {
+  Camera,
+  GeoJSONSource,
+  Layer,
+  Map,
+} from "@maplibre/maplibre-react-native";
 import { useMemo, useState } from "react";
 import type { Palette } from "@/shared/constants/palette";
 import { useAppTheme } from "@/shared/theme/app-theme-context";
@@ -82,9 +87,20 @@ export default function MapPrototype() {
     >
       <View style={styles.header}>
         <View style={styles.topRow}>
-          <Text accessibilityRole="header" style={[styles.title, { color: c.text }]}>
-            NLDMAP
-          </Text>
+
+          <View
+            style={styles.brand}
+            accessible
+            accessibilityRole="header"
+            accessibilityLabel="NLDMAP"
+          >
+            <View style={styles.brandBox}>
+              <Text style={styles.brandLetter}>N</Text>
+            </View>
+
+            <Text style={styles.title}>LDMAP</Text>
+          </View>
+
 
           <View style={styles.topActions}>
             {/* Botón de modo claro / oscuro */}
@@ -134,8 +150,8 @@ export default function MapPrototype() {
           </View>
 
         </View>
-        <Text style={[styles.body, { color: c.muted }]}>Mapa de reportes</Text>
-        <Text style={[styles.caption, { color: c.muted }]}>DEMOSTRACIÓN · Casos ficticios</Text>
+        <Text style={[styles.body, { color: c.muted }]}>Aplicación móvil para gestión de reportes de personas no localizadas y desaparecidas
+        </Text>
       </View>
       <View
         style={styles.viewport}
@@ -167,6 +183,45 @@ export default function MapPrototype() {
             selecting={selecting}
             onSelect={setSelection}
           />
+
+          {/* Ubicación personal obtenida del GPS */}
+          {deviceLocation.coordinate && (
+            <GeoJSONSource
+              id="device-location"
+              data={{
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "Point",
+                  coordinates: deviceLocation.coordinate,
+                },
+              }}
+            >
+              {/* Halo azul alrededor de la ubicación */}
+              <Layer
+                id="device-location-halo"
+                type="circle"
+                paint={{
+                  "circle-radius": 28,
+                  "circle-color": c.userLocation,
+                  "circle-opacity": 0.18,
+                }}
+              />
+
+              {/* Punto central azul con contorno blanco */}
+              <Layer
+                id="device-location-point"
+                type="circle"
+                paint={{
+                  "circle-radius": 10,
+                  "circle-color": c.userLocation,
+                  "circle-stroke-width": 3,
+                  "circle-stroke-color": "#FFFFFF",
+                }}
+              />
+            </GeoJSONSource>
+          )}
+
         </Map>
         {selecting && (
           <View
@@ -271,5 +326,28 @@ function createStyles(c: Palette) {
     },
     targetDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: c.draft },
     pressed: { opacity: 0.7 },
+
+    brand: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      flexShrink: 1,
+    },
+
+    brandBox: {
+      width: 36,
+      height: 36,
+      borderWidth: 2,
+      borderColor: c.text,
+      borderRadius: 9,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    brandLetter: {
+      color: c.text,
+      fontSize: 22,
+      fontWeight: "800",
+    },
   });
 }

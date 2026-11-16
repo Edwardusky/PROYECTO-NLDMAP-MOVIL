@@ -10,7 +10,7 @@ export const lightPalette = {
   surface: "#F7F9F6",
   surfaceAlt: "#E8EEE7",
   paper: "#FFFFFF",
-
+  userLocation: "#1877F2",
   text: "#173D3A",
   muted: "#52675E",
 
@@ -31,6 +31,8 @@ export const lightPalette = {
 
   mapMarkerText: "#FFFFFF",
   mapMarkerOutline: "#FFFFFF",
+
+  
 } as const;
 
 export type Palette = {
@@ -41,7 +43,7 @@ export const darkPalette: Palette = {
   surface: "#101B1A",
   surfaceAlt: "#1C302D",
   paper: "#253D39",
-
+  userLocation: "#4EA7FF",
   text: "#F2F7F4",
   muted: "#B3C8BD",
 
