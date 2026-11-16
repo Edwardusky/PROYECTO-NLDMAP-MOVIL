@@ -37,9 +37,21 @@ function form({ report = emptyReport, step = 0, profile = emptyProfile, params =
       fileName: file,
     });
     const localRequire = name => {
+      if (name === "@expo/vector-icons/Ionicons") {
+        return { default: "Ionicons" };
+      }
+
+      if (name === "@/shared/theme/app-theme-context") {
+        return {
+          useAppTheme: () => ({
+            colors: {},
+          }),
+        };
+      }
       if (name === "react/jsx-runtime") return require(name);
       if (name === "react") return {
         useCallback: callback => callback,
+        useMemo: callback => callback(),
         useEffect: effect => effects.push(effect),
         useState: initial => {
           const index = cursor++;
@@ -49,11 +61,13 @@ function form({ report = emptyReport, step = 0, profile = emptyProfile, params =
       };
       if (name === "react-native") return {
         Text: "Text", View: "View", Image: "Image",
-        BackHandler: { addEventListener: (event, callback) => {
-          assert.equal(event, "hardwareBackPress");
-          hardwareBack = callback;
-          return { remove: () => { removed = true; } };
-        } },
+        BackHandler: {
+          addEventListener: (event, callback) => {
+            assert.equal(event, "hardwareBackPress");
+            hardwareBack = callback;
+            return { remove: () => { removed = true; } };
+          }
+        },
       };
       if (name === "expo-router") return {
         Stack: { Screen: "Stack.Screen" },
@@ -110,38 +124,202 @@ function text(tree) {
 }
 const valid = () => ({
   ...emptyReport, started: true, firstName: "Persona", coordinate: [-98.2, 19.4],
-  story: "Relato", reporterName: "Contacto", reporterEmail: "contacto@example.com",
+  story: "Relato", reporterName: "Contacto", reporterEmail: "contacto@example.com", paternalSurname: "Apellido",
+  photo: "file:///persona.jpg",
 });
+
 
 test("identification binds fields, photo and canonical choices while preserving the draft across steps", () => {
   const f = form({ report: valid() });
+
   let tree = f.render();
-  find(tree, "Field", "Nombre de la persona reportada *").onChangeText("Nombre editado");
-  find(tree, "LocalPhotoPicker").onChange("file:///persona.jpg");
+
+  find(
+    tree,
+    "Field",
+    "Nombre(s) · Obligatorio"
+  ).onChangeText("Nombre editado");
+
+  find(tree, "LocalPhotoPicker")
+    .onChange("file:///persona.jpg");
+
   tree = f.render();
-  assert.equal(find(tree, "Field", "Nombre de la persona reportada *").value, "Nombre editado");
-  assert.equal(find(tree, "LocalPhotoPicker").uri, "file:///persona.jpg");
-  assert.equal(find(tree, "Choices", "Edad").value, "Se desconoce");
-  find(tree, "Choices", "Edad").onChange("Conocida");
+
+  assert.equal(
+    find(tree, "Field", "Nombre(s) · Obligatorio").value,
+    "Nombre editado"
+  );
+
+  assert.equal(
+    find(tree, "LocalPhotoPicker").uri,
+    "file:///persona.jpg"
+  );
+
+  assert.equal(
+    find(tree, "Choices", "Información sobre la edad").value,
+    "Se desconoce"
+  );
+
+  find(
+    tree,
+    "Choices",
+    "Información sobre la edad"
+  ).onChange("Conocida");
+
   tree = f.render();
+
   find(tree, "Action", "Continuar").onPress();
+
   tree = f.render();
+
+  // No debe avanzar si falta la edad conocida.
   assert.equal(f.state.step, 0);
-  assert.ok(find(tree, "Field", "Edad en años *").error);
-  find(tree, "Field", "Edad en años *").onChangeText("28");
+
+  assert.ok(
+    find(
+      tree,
+      "Field",
+      "Edad en años · Obligatoria"
+    ).error
+  );
+
+  find(
+    tree,
+    "Field",
+    "Edad en años · Obligatoria"
+  ).onChangeText("28");
+
   find(f.render(), "Action", "Continuar").onPress();
+
   assert.equal(f.state.step, 1);
-  find(f.render(), "Action", "Paso anterior").onPress();
+
+  find(
+    f.render(),
+    "Action",
+    "Paso anterior"
+  ).onPress();
+
   tree = f.render();
+
   assert.equal(f.state.step, 0);
-  assert.equal(find(tree, "Field", "Edad en años *").value, "28");
-  assert.equal(find(tree, "Choices", "Edad").value, "Conocida");
-  assert.equal(find(tree, "LocalPhotoPicker").uri, "file:///persona.jpg");
-  find(tree, "Choices", "Edad").onChange("Se desconoce");
+
+  assert.equal(
+    find(tree, "Field", "Edad en años · Obligatoria").value,
+    "28"
+  );
+
+  assert.equal(
+    find(tree, "Choices", "Información sobre la edad").value,
+    "Conocida"
+  );
+
+  assert.equal(
+    find(tree, "LocalPhotoPicker").uri,
+    "file:///persona.jpg"
+  );
+
+  find(
+    tree,
+    "Choices",
+    "Información sobre la edad"
+  ).onChange("Se desconoce");
+
   assert.equal(f.state.report.ageMode, "No se sabe");
   assert.equal(f.state.report.age, "28");
-  assert.ok(!nodes(f.render()).some(node => node.props.label === "Edad en años *"));
+
+  assert.ok(
+    !nodes(f.render()).some(
+      (node) =>
+        node.props.label === "Edad en años · Obligatoria"
+    )
+  );
 });
+
+
+test("identification preserves separate surnames and unknown surname selection", () => {
+  const f = form({ report: valid() });
+
+  let tree = f.render();
+
+  find(
+    tree,
+    "Field",
+    "Apellido paterno · Opcional individualmente"
+  ).onChangeText("García");
+
+  find(
+    tree,
+    "Field",
+    "Apellido materno · Opcional individualmente"
+  ).onChangeText("López");
+
+  assert.equal(
+    f.state.report.paternalSurname,
+    "García"
+  );
+
+  assert.equal(
+    f.state.report.maternalSurname,
+    "López"
+  );
+
+  tree = f.render();
+
+  find(
+    tree,
+    "Choices",
+    "¿Se desconocen ambos apellidos?"
+  ).onChange("Sí");
+
+  assert.equal(
+    f.state.report.surnamesUnknown,
+    true
+  );
+
+  tree = f.render();
+
+  // Ambos campos deben quedar deshabilitados.
+  assert.equal(
+    find(
+      tree,
+      "Field",
+      "Apellido paterno · Opcional individualmente"
+    ).editable,
+    false
+  );
+
+  assert.equal(
+    find(
+      tree,
+      "Field",
+      "Apellido materno · Opcional individualmente"
+    ).editable,
+    false
+  );
+
+  // Los datos se conservan si se cambia la elección.
+  find(
+    tree,
+    "Choices",
+    "¿Se desconocen ambos apellidos?"
+  ).onChange("No");
+
+  assert.equal(
+    f.state.report.surnamesUnknown,
+    false
+  );
+
+  assert.equal(
+    f.state.report.paternalSurname,
+    "García"
+  );
+
+  assert.equal(
+    f.state.report.maternalSurname,
+    "López"
+  );
+});
+
 
 test("description adds, edits and removes marks with stable identifiers and retained physical fields", () => {
   const mark = { id: 7, type: "Tatuaje", area: "Brazo", description: "Estrella" };
@@ -264,4 +442,38 @@ test("Android back callback preserves data, steps back and removes its listener"
   f.state.step = 0;
   f.render(); f.focus(); f.back();
   assert.deepEqual(f.navigation, [["replace", "/"]]);
+});
+
+
+test("report screen provides a five-step progress header", () => {
+  const f = form({ report: valid() });
+
+  const first = f.render();
+
+  const firstScreen = nodes(first).find(
+    (node) => node.type === "FormScreen"
+  );
+
+  assert.ok(firstScreen);
+  assert.equal(firstScreen.props.header.props.step, 0);
+
+  assert.equal(
+    firstScreen.props.header.props.sections.length,
+    5
+  );
+
+  find(first, "Action", "Continuar").onPress();
+
+  assert.equal(f.state.step, 1);
+
+  const second = f.render();
+
+  const secondScreen = nodes(second).find(
+    (node) => node.type === "FormScreen"
+  );
+
+  assert.equal(
+    secondScreen.props.header.props.step,
+    1
+  );
 });

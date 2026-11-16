@@ -22,6 +22,8 @@ type Props = {
   onChange: (uri: string | null) => void;
   label: string;
   allowCapture?: boolean;
+  required?: boolean;
+  validationError?: string;
 };
 
 type PhotoSource = "gallery" | "camera";
@@ -31,6 +33,8 @@ export function LocalPhotoPicker({
   onChange,
   label,
   allowCapture = false,
+  required = false,
+  validationError,
 }: Props) {
   const { colors: c } = useAppTheme();
   const s = useFormStyles();
@@ -87,18 +91,18 @@ export function LocalPhotoPicker({
       const result =
         source === "camera"
           ? await ImagePicker.launchCameraAsync({
-              mediaTypes: ["images"],
-              allowsEditing: false,
-              quality: 0.8,
-              exif: false,
-            })
+            mediaTypes: ["images"],
+            allowsEditing: false,
+            quality: 0.8,
+            exif: false,
+          })
           : await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ["images"],
-              allowsEditing: false,
-              allowsMultipleSelection: false,
-              quality: 0.8,
-              exif: false,
-            });
+            mediaTypes: ["images"],
+            allowsEditing: false,
+            allowsMultipleSelection: false,
+            quality: 0.8,
+            exif: false,
+          });
 
       if (!mounted.current || result.canceled) return;
 
@@ -106,6 +110,33 @@ export function LocalPhotoPicker({
 
       if (!asset?.uri) {
         throw new Error("No image");
+      }
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+      ];
+
+      if (
+        asset.mimeType &&
+        !allowedTypes.includes(asset.mimeType)
+      ) {
+        setError(
+          "Formato no admitido. Selecciona una fotografía JPG, JPEG o PNG."
+        );
+        return;
+      }
+
+      const maxBytes = 5 * 1024 * 1024;
+
+      if (
+        typeof asset.fileSize === "number" &&
+        asset.fileSize > maxBytes
+      ) {
+        setError(
+          "La imagen supera los 5 MB permitidos. Selecciona otra fotografía."
+        );
+        return;
       }
 
       // Se utiliza la misma propiedad para ambas fuentes.
@@ -151,7 +182,7 @@ export function LocalPhotoPicker({
   return (
     <View style={s.field}>
       <Text style={s.label}>
-        {label} · Opcional
+        {label} · {required ? "Obligatoria" : "Opcional"}
       </Text>
 
       {/* Vista previa */}
@@ -234,6 +265,12 @@ export function LocalPhotoPicker({
       {error && (
         <Text accessibilityRole="alert" style={s.error}>
           {error}
+        </Text>
+      )}
+
+      {validationError && (
+        <Text accessibilityRole="alert" style={s.error}>
+          {validationError}
         </Text>
       )}
 

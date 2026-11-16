@@ -11,6 +11,7 @@ import {
   FormScreen,
   useFormStyles,
 } from "@/shared/components/form-controls";
+import { ReportProgress } from "../components/report-progress";
 import { useProfile } from "@/features/profile/state/profile-context";
 import { ReportContactStep } from "../components/report-contact-step";
 import { ReportDescriptionStep } from "../components/report-description-step";
@@ -153,14 +154,20 @@ export default function CreateReportScreen() {
     setNotice(null);
   }
   return (
-    <FormScreen key={step}>
-      <Stack.Screen
-        options={{
-          headerLeft: () => <Action secondary label="Atrás" onPress={back} />,
-        }}
-      />
-      <Text accessibilityRole="header" style={s.title}>
-        {step + 1} de 5 · {sections[step]}
+    <FormScreen
+      key={step}
+      header={
+        <ReportProgress
+          step={step}
+          sections={sections}
+        />
+      }
+    >
+      <Text style={s.body}>
+        Completa los datos que conozcas.
+        Los campos obligatorios se indican expresamente.
+        Si desconoces un dato, utiliza la opción correspondiente
+        cuando esté disponible.
       </Text>
       {/* <Text style={s.body}>
         Borrador temporal. Completa lo que sabes; los campos con * son

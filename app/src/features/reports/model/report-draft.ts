@@ -15,6 +15,12 @@ export type Mark = {
 export type Report = {
   started: boolean;
   firstName: string;
+  // Campos nuevos de identificación.
+  paternalSurname: string;
+  maternalSurname: string;
+  surnamesUnknown: boolean;
+  // Campo heredado de borradores anteriores.
+  // Lo conservamos temporalmente para no perder información.
   lastName: string;
   ageMode: string;
   age: string;
@@ -51,6 +57,9 @@ export type Report = {
 export const emptyReport: Report = {
   started: false,
   firstName: "",
+  paternalSurname: "",
+  maternalSurname: "",
+  surnamesUnknown: false,
   lastName: "",
   ageMode: UNKNOWN_INFORMATION,
   age: "",
@@ -103,25 +112,25 @@ export function seedReport(report: Report, profile: Profile): Report {
   return report.started
     ? report
     : {
-        ...report,
-        started: true,
-        reporterName: [profile.firstName.trim(), profile.lastName.trim()]
-          .filter(Boolean)
-          .join(" "),
-        reporterEmail: profile.email,
-        reporterPhone: profile.phone,
-        reporterAddress: [
-          profile.street,
-          profile.locality,
-          profile.municipality,
-          profile.state,
-          profile.postalCode,
-          profile.reference,
-        ]
-          .filter((value) => value.trim())
-          .join(", "),
-        reporterSocial: profile.social,
-      };
+      ...report,
+      started: true,
+      reporterName: [profile.firstName.trim(), profile.lastName.trim()]
+        .filter(Boolean)
+        .join(" "),
+      reporterEmail: profile.email,
+      reporterPhone: profile.phone,
+      reporterAddress: [
+        profile.street,
+        profile.locality,
+        profile.municipality,
+        profile.state,
+        profile.postalCode,
+        profile.reference,
+      ]
+        .filter((value) => value.trim())
+        .join(", "),
+      reporterSocial: profile.social,
+    };
 }
 export function validDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -136,15 +145,39 @@ export function reportErrors(
   step: number,
 ): Record<string, string> {
   const errors: Record<string, string> = {};
+
   if (step === 0) {
-    if (!report.firstName.trim())
-      errors.firstName = "Escribe el nombre de la persona reportada.";
+    if (!report.firstName.trim()) {
+      errors.firstName =
+        "Escribe el nombre o nombres de la persona reportada.";
+    }
+
+    const hasSurname =
+      !!report.paternalSurname?.trim() ||
+      !!report.maternalSurname?.trim();
+
+    if (!report.surnamesUnknown && !hasSurname) {
+      errors.paternalSurname =
+        "Indica al menos un apellido o selecciona que ambos se desconocen.";
+    }
+
     if (
       !isUnknownInformation(report.ageMode) &&
-      (!/^\d{1,3}$/.test(report.age) || Number(report.age) > 120)
-    )
-      errors.age = "Escribe una edad entre 0 y 120 años o elige Se desconoce.";
+      (
+        !/^\d{1,3}$/.test(report.age) ||
+        Number(report.age) > 120
+      )
+    ) {
+      errors.age =
+        "Introduce una edad de 0 a 120 años o selecciona Se desconoce.";
+    }
+
+    if (!report.photo) {
+      errors.photo =
+        "Agrega una fotografía principal para continuar.";
+    }
   }
+
   if (step === 1 && report.height.trim()) {
     const value = Number(report.height.replace(",", "."));
     const cm = report.heightUnit === "m" ? value * 100 : value;

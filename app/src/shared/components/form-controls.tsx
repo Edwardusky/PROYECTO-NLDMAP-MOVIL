@@ -125,6 +125,14 @@ function createFormStyles(c: Palette) {
     pressed: {
       opacity: 0.7,
     },
+    stickyHeader: {
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 12,
+      backgroundColor: c.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: c.divider,
+    },
   });
 }
 
@@ -147,10 +155,13 @@ export function useFormStyles() {
  */
 export const formStyles = createFormStyles(lightPalette);
 
+
 export function FormScreen({
   children,
+  header,
 }: {
   children: ReactNode;
+  header?: ReactNode;
 }) {
   const s = useFormStyles();
   const headerHeight = useHeaderHeight();
@@ -160,6 +171,20 @@ export function FormScreen({
       style={s.screen}
       edges={["bottom", "left", "right"]}
     >
+      {header && (
+        <View style={s.stickyHeader}>
+          <View
+            style={{
+              width: "100%",
+              maxWidth: 680,
+              alignSelf: "center",
+            }}
+          >
+            {header}
+          </View>
+        </View>
+      )}
+
       <KeyboardAvoidingView
         style={s.screen}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -176,6 +201,7 @@ export function FormScreen({
     </SafeAreaView>
   );
 }
+
 
 export function Field({
   label,

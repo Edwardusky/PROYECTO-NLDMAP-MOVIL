@@ -1,4 +1,4 @@
-import { Action, useFormStyles} from "@/shared/components/form-controls";
+import { Action, useFormStyles } from "@/shared/components/form-controls";
 import { Image, Text, View } from "react-native";
 import {
   informationModeLabel,
@@ -31,10 +31,26 @@ export function ReportReviewStep(props: Props) {
         <Text accessibilityRole="header" style={s.heading}>
           Persona reportada
         </Text>
+
         {summary(
           "Nombre",
-          [r.firstName, r.lastName].filter(Boolean).join(" "),
+          [
+            r.firstName,
+            r.surnamesUnknown
+              ? ""
+              : r.paternalSurname ||
+              (!r.maternalSurname ? r.lastName : ""),
+            r.surnamesUnknown
+              ? ""
+              : r.maternalSurname,
+          ]
+            .filter(Boolean)
+            .join(" "),
         )}
+
+        {r.surnamesUnknown &&
+          summary("Apellidos", "Se desconocen")}
+
         {summary(
           "Edad",
           isUnknownInformation(r.ageMode)

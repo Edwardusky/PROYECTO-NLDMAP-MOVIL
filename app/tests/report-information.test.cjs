@@ -18,6 +18,8 @@ const { emptyProfile } = require("../src/features/profile/model/profile.ts");
 const draft = () => ({
   ...emptyReport,
   firstName: "Ejemplo",
+  paternalSurname: "Apellido",
+  photo: "file:///persona.jpg",
   coordinate: [-98.2, 19.4],
   story: "Relato",
   reporterName: "Contacto",
@@ -148,4 +150,61 @@ test("unknown modes do not bypass identification, description, location or conta
   assert.ok(contact.reporterName);
   assert.ok(contact.reporterEmail);
   assert.ok(contact.reporterPhone);
+});
+
+
+test("identification requires names, a surname or explicit unknown, and photo", () => {
+  const report = draft();
+
+  assert.deepEqual(reportErrors(report, 0), {});
+
+  const noSurnames = {
+    ...report,
+    paternalSurname: "",
+    maternalSurname: "",
+  };
+
+  assert.ok(
+    reportErrors(noSurnames, 0).paternalSurname
+  );
+
+  assert.deepEqual(
+    reportErrors({
+      ...noSurnames,
+      surnamesUnknown: true,
+    }, 0),
+    {}
+  );
+
+  assert.deepEqual(
+    reportErrors({
+      ...noSurnames,
+      maternalSurname: "López",
+    }, 0),
+    {}
+  );
+
+  assert.ok(
+    reportErrors({
+      ...report,
+      photo: null,
+    }, 0).photo
+  );
+});
+
+test("approximate age is accepted when provided", () => {
+  const report = {
+    ...draft(),
+    ageMode: "Aproximada",
+    age: "28",
+  };
+
+  assert.deepEqual(reportErrors(report, 0), {});
+
+  assert.ok(
+    reportErrors({
+      ...report,
+      age: "",
+    }, 0).age
+  );
 });
