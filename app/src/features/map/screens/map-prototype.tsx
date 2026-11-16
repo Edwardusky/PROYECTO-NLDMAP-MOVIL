@@ -15,7 +15,9 @@ import type { Palette } from "@/shared/constants/palette";
 import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useReportDraft } from "@/features/reports/state/report-draft-context";
 import {
+  Alert,
   Appearance,
   Pressable,
   StyleSheet,
@@ -24,7 +26,7 @@ import {
   useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import { MapReportList } from "../components/map-report-list";
 import { MapFilterPanel, type FilterPanel } from "../components/map-filter-panel";
 import { filterCases } from "@/features/map/utils/map-cases";
 import { DEMO_CASES } from "@/features/reports/fixtures/demo-cases";
@@ -49,11 +51,13 @@ export default function MapPrototype() {
     [c],
   );
 
+  const { discardDraft } = useReportDraft();
+
   const [caseStatuses, setCaseStatuses] = useState<CaseStatus[]>([
     ...CASE_STATUSES,
   ]);
-  const [showSightings, setShowSightings] = useState(true);
   const [panel, setPanel] = useState<FilterPanel | null>(null);
+  const [listOpen, setListOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const visibleCases = filterCases(DEMO_CASES, caseStatuses);
   const {
@@ -77,6 +81,38 @@ export default function MapPrototype() {
         : [...current, status],
     );
   }
+
+
+  function confirmDiscardDraft() {
+    Alert.alert(
+      "Descartar borrador",
+      "¿Quieres descartar este borrador? " +
+      "Se perderán los datos capturados, " +
+      "la fotografía asociada y la ubicación " +
+      "seleccionada. Esta acción no se puede deshacer.",
+      [
+        {
+          text: "Conservar borrador",
+          style: "cancel",
+        },
+        {
+          text: "Descartar",
+          style: "destructive",
+          onPress: () => {
+            // Invalida la selección pendiente del mapa.
+            leaveSelection();
+
+            // Restablece el formulario y su estado.
+            discardDraft();
+          },
+        },
+      ],
+      {
+        cancelable: true,
+      }
+    );
+  }
+
 
   return (
     <SafeAreaView
@@ -246,14 +282,22 @@ export default function MapPrototype() {
               onOpenReport={(id) => router.push({ pathname: "/case-detail", params: { id } })}
             />
           )}
-        <MapToolbar
-          height={viewport.height}
-          northTop={northTop}
-          panel={panel}
-          caseCount={caseStatuses.length}
-          showSightings={showSightings}
-          onOpen={setPanel}
-        />
+        {!selecting && (
+          <MapToolbar
+            height={viewport.height}
+            panel={panel}
+            caseCount={caseStatuses.length}
+            listOpen={listOpen}
+            onOpen={(nextPanel) => {
+              setListOpen(false);
+              setPanel(nextPanel);
+            }}
+            onOpenList={() => {
+              setPanel(null);
+              setListOpen(true);
+            }}
+          />
+        )}
       </View>
       <MapFooter
         deviceLocation={deviceLocation}
@@ -270,14 +314,26 @@ export default function MapPrototype() {
         onCancel={cancelSelection}
         onStart={startSelection}
         onContinue={() => router.navigate("/create-report")}
+        onDiscard={confirmDiscardDraft}
       />
       <MapFilterPanel
         panel={panel}
         onClose={() => setPanel(null)}
         caseStatuses={caseStatuses}
         onToggleCase={toggleCaseStatus}
-        showSightings={showSightings}
-        onToggleSightings={() => setShowSightings((value) => !value)}
+      />
+      <MapReportList
+        visible={listOpen}
+        cases={visibleCases}
+        onClose={() => setListOpen(false)}
+        onOpenReport={(id) => {
+          setListOpen(false);
+
+          router.push({
+            pathname: "/case-detail",
+            params: { id },
+          });
+        }}
       />
 
       <AccountDrawer

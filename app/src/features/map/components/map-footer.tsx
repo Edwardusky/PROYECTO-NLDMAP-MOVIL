@@ -19,6 +19,7 @@ type Props = {
   onCancel: () => void;
   onStart: () => void;
   onContinue: () => void;
+  onDiscard: () => void;
 };
 
 export function MapFooter(props: Props) {
@@ -39,6 +40,7 @@ export function MapFooter(props: Props) {
     onCancel: cancelSelection,
     onStart,
     onContinue,
+    onDiscard,
   } = props;
   return (
     <ScrollView
@@ -92,7 +94,7 @@ export function MapFooter(props: Props) {
       <Text style={styles.emptyTitle}>
         {visibleCount} reportes visibles
       </Text>
-  
+
       {mapFailed && (
         <Text accessibilityRole="alert" style={styles.body}>
           No se pudo cargar el mapa. Revisa la conexión y vuelve a abrir esta
@@ -159,16 +161,44 @@ export function MapFooter(props: Props) {
           </Text>
         </Pressable>
       )}
+
+      {/* Opciones disponibles cuando existe un borrador */}
       {reportStarted && !selecting && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Continuar borrador temporal"
-          onPress={onContinue}
-          style={styles.remove}
-        >
-          <Text style={styles.controlText}>Continuar borrador</Text>
-        </Pressable>
+        <>
+          {/* Continuar el borrador existente */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Continuar borrador temporal"
+            onPress={onContinue}
+            style={({ pressed }) => [
+              styles.remove,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.controlText}>
+              Continuar borrador
+            </Text>
+          </Pressable>
+
+          {/* Descartar el borrador */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Descartar borrador temporal"
+            accessibilityHint="Solicita confirmación antes de eliminar el borrador"
+            onPress={onDiscard}
+            style={({ pressed }) => [
+              styles.remove,
+              styles.discardButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.discardText}>
+              Descartar borrador
+            </Text>
+          </Pressable>
+        </>
       )}
+
     </ScrollView>
   );
 }
@@ -211,6 +241,16 @@ function createStyles(c: Palette) {
       padding: 10,
       backgroundColor: c.surfaceAlt,
       borderRadius: 12,
+    },
+    discardButton: {
+      borderWidth: 1,
+      borderColor: c.error,
+    },
+
+    discardText: {
+      color: c.error,
+      fontSize: 13,
+      fontWeight: "700",
     },
   });
 }

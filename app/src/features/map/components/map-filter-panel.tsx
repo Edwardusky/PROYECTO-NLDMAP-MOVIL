@@ -1,27 +1,36 @@
+
 import Ionicons from "@expo/vector-icons/Ionicons";
+
 import {
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { CASE_STATUSES, type CaseStatus } from "@/features/reports/model/case-status";
+
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from "react-native-safe-area-context";
+
+import {
+  CASE_STATUSES,
+  type CaseStatus,
+} from "@/features/reports/model/case-status";
+
 import type { Palette } from "@/shared/constants/palette";
 import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { CloseButton } from "@/shared/components/close-button";
 
-export type FilterPanel = "cases" | "events" | "relief";
+export type FilterPanel = "filters";
+
 type Props = {
   panel: FilterPanel | null;
   onClose: () => void;
   caseStatuses: CaseStatus[];
   onToggleCase: (status: CaseStatus) => void;
-  showSightings: boolean;
-  onToggleSightings: () => void;
 };
 
 export function MapFilterPanel({
@@ -29,27 +38,18 @@ export function MapFilterPanel({
   onClose,
   caseStatuses,
   onToggleCase,
-  showSightings,
-  onToggleSightings,
 }: Props) {
   const { colors: c } = useAppTheme();
   const styles = createStyles(c);
 
-  const trackColor = {
-    false: c.muted,
-    true: c.action,
-  };
-  const title =
-    panel === "cases" ? "Reportes" : panel === "events" ? "Avistamientos" : "Capas";
   return (
     <Modal
-      visible={panel !== null}
+      visible={panel === "filters"}
       transparent
       animationType="fade"
       onRequestClose={onClose}
       supportedOrientations={["portrait", "landscape"]}
     >
-      {/* Measure the Modal window itself. No inherited screen insets or fixed bar heights. */}
       <SafeAreaProvider style={styles.overlay}>
         <Pressable
           style={StyleSheet.absoluteFill}
@@ -57,6 +57,7 @@ export function MapFilterPanel({
           accessibilityLabel="Cerrar panel de filtros"
           onPress={onClose}
         />
+
         <SafeAreaView
           style={styles.safeArea}
           edges={["top", "bottom", "left", "right"]}
@@ -68,121 +69,110 @@ export function MapFilterPanel({
             onAccessibilityEscape={onClose}
           >
             <View style={styles.heading}>
-              <Text accessibilityRole="header" style={styles.title}>
-                {title}
+              <Text
+                accessibilityRole="header"
+                style={styles.title}
+              >
+                Filtros
               </Text>
+
               <CloseButton
-                label={`Cerrar panel de ${title.toLowerCase()}`}
+                label="Cerrar panel de filtros"
                 onPress={onClose}
               />
             </View>
+
             <ScrollView
               style={styles.scroll}
               contentContainerStyle={styles.content}
             >
-              {panel === "cases" && (
-                <>
-                  <Text style={styles.body}>
-                    Filtra por el estado de seguimiento de la persona reportada.
-                  </Text>
-                  {CASE_STATUSES.map((status) => {
-                    const checked = caseStatuses.includes(status);
-                    return (
-                      <Pressable
-                        key={status}
-                        accessibilityRole="checkbox"
-                        accessibilityLabel={status}
-                        accessibilityState={{ checked }}
-                        onPress={() => onToggleCase(status)}
-                        style={({ pressed }) => [
-                          styles.option,
-                          checked && styles.selected,
-                          pressed && styles.pressed,
-                        ]}
-                      >
-                        <Ionicons
-                          name={checked ? "checkbox-outline" : "square-outline"}
-                          size={26}
-                          color={c.text}
-                          accessible={false}
-                        />
-                        <View style={styles.flex}>
-                          <Text style={styles.label}>{status}</Text>
-                          <Text style={styles.body}>
-                            {checked ? "Seleccionado" : "Sin seleccionar"}
-                          </Text>
-                        </View>
-                        <Ionicons
-                          name={
-                            status === "Localizados"
-                              ? "checkmark-circle-outline"
-                              : "search-outline"
-                          }
-                          size={24}
-                          color={
-                            status === "Localizados" ? c.located : c.searching
-                          }
-                          accessible={false}
-                        />
-                      </Pressable>
-                    );
-                  })}
-                  {!caseStatuses.length && (
-                    <Text accessibilityLiveRegion="polite" style={styles.body}>
-                      Selecciona un estado de seguimiento para mostrar reportes.
-                    </Text>
-                  )}
-                </>
-              )}
-              {panel === "events" && (
-                <>
-                  <Text style={styles.body}>
-                    Un avistamiento no cambia el estado de seguimiento. Este
-                    control aún no muestra avistamientos en el mapa.
-                  </Text>
-                  <View style={styles.option}>
+              <Text style={styles.body}>
+                Selecciona qué reportes deseas
+                visualizar en el mapa.
+              </Text>
+
+              <Text
+                accessibilityRole="header"
+                style={styles.sectionTitle}
+              >
+                Estado de seguimiento
+              </Text>
+
+              {CASE_STATUSES.map((status) => {
+                const checked =
+                  caseStatuses.includes(status);
+
+                return (
+                  <Pressable
+                    key={status}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={status}
+                    accessibilityState={{
+                      checked,
+                    }}
+                    onPress={() => onToggleCase(status)}
+                    style={({ pressed }) => [
+                      styles.option,
+                      checked && styles.selected,
+                      pressed && styles.pressed,
+                    ]}
+                  >
                     <Ionicons
-                      name="radio-outline"
-                      size={24}
-                      color={c.sighting}
+                      name={
+                        checked
+                          ? "checkbox-outline"
+                          : "square-outline"
+                      }
+                      size={26}
+                      color={c.text}
                       accessible={false}
                     />
-                    <Text style={[styles.label, styles.flex]}>
-                      Avistamientos
-                    </Text>
-                    <Switch
-                      accessibilityLabel="Mostrar avistamientos"
-                      value={showSightings}
-                      onValueChange={onToggleSightings}
-                      trackColor={trackColor}
-                      thumbColor={c.paper}
-                      ios_backgroundColor={c.muted}
+
+                    <View style={styles.flex}>
+                      <Text style={styles.label}>
+                        {status}
+                      </Text>
+
+                      <Text style={styles.body}>
+                        {checked
+                          ? "Seleccionado"
+                          : "Sin seleccionar"}
+                      </Text>
+                    </View>
+
+                    <Ionicons
+                      name={
+                        status === "Localizados"
+                          ? "checkmark-circle-outline"
+                          : "search-outline"
+                      }
+                      size={24}
+                      color={
+                        status === "Localizados"
+                          ? c.located
+                          : c.searching
+                      }
+                      accessible={false}
                     />
-                  </View>
-                </>
+                  </Pressable>
+                );
+              })}
+
+              {!caseStatuses.length && (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={styles.body}
+                >
+                  No hay estados seleccionados.
+                  Selecciona al menos uno para
+                  mostrar reportes.
+                </Text>
               )}
-              {panel === "relief" && (
-                <>
-                  <View style={styles.option}>
-                    <Text style={[styles.label, styles.flex]}>Relieve</Text>
-                    <Switch
-                      accessibilityLabel="Relieve no disponible"
-                      accessibilityState={{ disabled: true, checked: false }}
-                      disabled
-                      value={false}
-                      trackColor={trackColor}
-                      thumbColor={c.paper}
-                      ios_backgroundColor={c.muted}
-                    />
-                  </View>
-                  <Text style={styles.body}>
-                    El relieve no está disponible en este momento.
-                  </Text>
-                </>
-              )}
+
               <View style={styles.notice}>
                 <Text style={styles.body}>
-                  Demostración · Casos ficticios. Sin avistamientos de ejemplo.
+                  Demostración: los reportes
+                  mostrados son ficticios.
                 </Text>
               </View>
             </ScrollView>
@@ -195,8 +185,16 @@ export function MapFilterPanel({
 
 function createStyles(c: Palette) {
   return StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: c.overlay },
-    safeArea: { flex: 1, alignItems: "flex-end" },
+    overlay: {
+      flex: 1,
+      backgroundColor: c.overlay,
+    },
+
+    safeArea: {
+      flex: 1,
+      alignItems: "flex-end",
+    },
+
     panel: {
       flex: 1,
       minHeight: 0,
@@ -204,6 +202,7 @@ function createStyles(c: Palette) {
       maxWidth: 380,
       backgroundColor: c.surface,
     },
+
     heading: {
       paddingHorizontal: 16,
       paddingVertical: 8,
@@ -213,11 +212,42 @@ function createStyles(c: Palette) {
       borderBottomWidth: 1,
       borderColor: c.divider,
     },
-    title: { flex: 1, fontSize: 22, fontWeight: "800", color: c.text },
-    scroll: { flex: 1, minHeight: 0 },
-    content: { padding: 16, gap: 16 },
-    body: { fontSize: 14, lineHeight: 22, color: c.muted },
-    label: { fontSize: 15, fontWeight: "600", color: c.text },
+
+    title: {
+      flex: 1,
+      fontSize: 22,
+      fontWeight: "800",
+      color: c.text,
+    },
+
+    scroll: {
+      flex: 1,
+      minHeight: 0,
+    },
+
+    content: {
+      padding: 16,
+      gap: 16,
+    },
+
+    body: {
+      fontSize: 14,
+      lineHeight: 22,
+      color: c.muted,
+    },
+
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: c.text,
+    },
+
+    label: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: c.text,
+    },
+
     option: {
       minHeight: 56,
       padding: 12,
@@ -229,9 +259,24 @@ function createStyles(c: Palette) {
       borderWidth: 1,
       borderColor: c.border,
     },
-    selected: { borderColor: c.action, borderWidth: 2 },
-    flex: { flex: 1 },
-    pressed: { opacity: 0.7 },
-    notice: { borderTopWidth: 1, borderColor: c.divider, paddingTop: 16 },
+
+    selected: {
+      borderColor: c.action,
+      borderWidth: 2,
+    },
+
+    flex: {
+      flex: 1,
+    },
+
+    pressed: {
+      opacity: 0.7,
+    },
+
+    notice: {
+      borderTopWidth: 1,
+      borderColor: c.divider,
+      paddingTop: 16,
+    },
   });
 }

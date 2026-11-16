@@ -37,12 +37,32 @@ function load(name) {
       };
     }
     if (specifier === "react-native") return {
-      Text: "Text", View: "View", Pressable: "Pressable", ScrollView: "ScrollView",
-      StyleSheet: { create: styles => styles, absoluteFill: { position: "absolute" } },
+      Text: "Text",
+      View: "View",
+      Pressable: "Pressable",
+      ScrollView: "ScrollView",
+      FlatList: "FlatList",
+      Modal: "Modal",
+      StyleSheet: {
+        create: (styles) => styles,
+        absoluteFill: { position: "absolute" },
+      },
     };
     if (specifier === "@maplibre/maplibre-react-native") return { GeoJSONSource: "GeoJSONSource", Layer: "Layer" };
     if (specifier === "@expo/vector-icons/Ionicons") return { default: "Ionicons" };
     if (specifier === "./map-selection-popup") return { MapSelectionPopup: "MapSelectionPopup" };
+    if (specifier === "react-native-safe-area-context") {
+      return {
+        SafeAreaProvider: "SafeAreaProvider",
+        SafeAreaView: "SafeAreaView",
+      };
+    }
+
+    if (specifier === "@/shared/components/close-button") {
+      return {
+        CloseButton: "CloseButton",
+      };
+    }
     const base = specifier.startsWith("@/") ? path.join(__dirname, "../src", specifier.slice(2)) : path.resolve(path.dirname(file), specifier);
     return require(base + ".ts");
   };
@@ -88,14 +108,144 @@ test("case layers retain IDs, coordinates, exact coincidence labels and marker s
   assert.deepEqual(filtered.props.data.features.map(item => item.properties.label), ["L", "L"]);
 });
 
-test("toolbar preserves panel actions, state, accessibility labels and placement", () => {
-  const Toolbar = load("map-toolbar"), opened = [];
-  const tree = Toolbar({ height: 600, northTop: 80, panel: "cases", caseCount: 2, showSightings: true, onOpen: panel => opened.push(panel) });
-  assert.equal(tree.props.style[1].top, 270);
-  for (const label of ["Capas: Relieve no disponible. Abrir opciones", "Reportes: 2/2. Abrir opciones", "Avistamientos: Opción activada. Abrir opciones"]) button(tree, label).onPress();
-  assert.deepEqual(opened, ["relief", "cases", "events"]);
-  assert.deepEqual(button(tree, "Reportes: 2/2. Abrir opciones").accessibilityState, { expanded: true, selected: true });
+
+
+
+test("toolbar exposes compact filters and list buttons", () => {
+  const Toolbar = load("map-toolbar");
+
+  const calls = [];
+
+  const props = {
+    height: 600,
+    panel: null,
+    caseCount: 2,
+    listOpen: false,
+    onOpen: (panel) => calls.push(panel),
+    onOpenList: () => calls.push("list"),
+  };
+
+  const tree = Toolbar(props);
+
+  assert.equal(tree.type, "View");
+
+  // Sin desplazamiento interno.
+  assert.equal(
+    nodes(tree).some(
+      (node) => node.type === "ScrollView"
+    ),
+    false
+  );
+
+  const controls = nodes(tree).filter(
+    (node) => node.type === "Pressable"
+  );
+
+  assert.equal(controls.length, 2);
+
+  button(
+    tree,
+    "Filtros de reportes. 2 de 2 estados seleccionados. Abrir filtros"
+  ).onPress();
+
+  button(
+    tree,
+    "Ver lista de reportes visibles"
+  ).onPress();
+
+  assert.deepEqual(calls, ["filters", "list"]);
+
+  const listButton = button(
+    tree,
+    "Ver lista de reportes visibles"
+  );
+
+  const buttonStyles = listButton.style({
+    pressed: false,
+  });
+
+  assert.equal(buttonStyles[0].width, 80);
+  assert.equal(buttonStyles[0].minHeight, 64);
+
+  // La barra se mantiene sobre la atribución.
+  assert.equal(tree.props.style[0].bottom, 64);
+
+  // El diseño compacto es horizontal.
+  const compact = Toolbar({
+    ...props,
+    height: 240,
+  });
+
+  assert.equal(
+    compact.props.style[1].flexDirection,
+    "row"
+  );
 });
+
+
+test("report list respects filtered cases and opens exact IDs", () => {
+  const ReportList = load("map-report-list");
+  const opened = [];
+
+  const visibleCases = filterCases(
+    DEMO_CASES,
+    ["En búsqueda"]
+  );
+
+  const tree = ReportList({
+    visible: true,
+    cases: visibleCases,
+    onClose: () => { },
+    onOpenReport: (id) => opened.push(id),
+  });
+
+  assert.equal(tree.props.visible, true);
+
+  const list = nodes(tree).find(
+    (node) => node.type === "FlatList"
+  );
+
+  assert.ok(list);
+
+  // Solo debe recibir los casos filtrados.
+  assert.deepEqual(
+    list.props.data.map((item) => item.id),
+    ["demo-alfa", "demo-gamma"]
+  );
+
+  // Abrir un elemento conserva su ID.
+  const firstItem = list.props.renderItem({
+    item: visibleCases[0],
+  });
+
+  button(
+    firstItem,
+    "Ver detalle del reporte de Persona ficticia Alfa"
+  ).onPress();
+
+  assert.deepEqual(opened, ["demo-alfa"]);
+
+  // También debe admitir cero resultados.
+  const emptyTree = ReportList({
+    visible: true,
+    cases: [],
+    onClose: () => { },
+    onOpenReport: () => { },
+  });
+
+  const emptyList = nodes(emptyTree).find(
+    (node) => node.type === "FlatList"
+  );
+
+  assert.equal(emptyList.props.data.length, 0);
+
+  assert.ok(
+    text(emptyList.props.ListEmptyComponent).includes(
+      "No hay reportes visibles"
+    )
+  );
+});
+
 
 test("popup keeps independent coincident reports and forwards the exact report ID", () => {
   const Popup = load("map-report-popup"), opened = [];
@@ -118,6 +268,7 @@ test("footer keeps confirmation guards, messages and all draft/device callbacks"
     selectionError: null, hasCaseStatuses: true, visibleCount: 4, reportStarted: true,
     onConfirm: () => calls.push("confirm"), onCancel: () => calls.push("cancel"),
     onStart: () => calls.push("start"), onContinue: () => calls.push("continue"),
+    onDiscard: () => calls.push("discard"),
   };
   const tree = Footer(props);
   assert.equal(button(tree, "Confirmar ubicación").disabled, false);
@@ -128,7 +279,26 @@ test("footer keeps confirmation guards, messages and all draft/device callbacks"
   const browse = Footer({ ...props, selecting: false });
   button(browse, "Elegir ubicación del borrador").onPress();
   button(browse, "Continuar borrador temporal").onPress();
-  assert.deepEqual(calls, ["locate", "settings", "confirm", "cancel", "start", "continue"]);
+  button(browse, "Descartar borrador temporal").onPress();
+  assert.deepEqual(calls, ["locate", "settings", "confirm", "cancel", "start", "continue", "discard"]);
+  // NUEVA PRUEBA:
+  // No debe aparecer "Descartar borrador"
+  // cuando todavía no existe un borrador activo.
+  const withoutDraft = Footer({
+    ...props,
+    selecting: false,
+    reportStarted: false,
+  });
+
+  assert.equal(
+    nodes(withoutDraft).some(
+      (node) =>
+        node.props?.accessibilityLabel ===
+        "Descartar borrador temporal"
+    ),
+    false
+  );
+
   for (const patch of [{ moving: true }, { confirming: true }, { mapReady: false }, { deviceLocation: { ...props.deviceLocation, loading: true } }]) {
     assert.equal(button(Footer({ ...props, ...patch }), "Confirmar ubicación").disabled, true);
   }
