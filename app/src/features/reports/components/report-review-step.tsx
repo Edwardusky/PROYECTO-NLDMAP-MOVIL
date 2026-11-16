@@ -33,24 +33,17 @@ export function ReportReviewStep(props: Props) {
         </Text>
 
         {summary(
-          "Nombre",
+          "Nombre completo",
           [
             r.firstName,
-            r.surnamesUnknown
-              ? ""
-              : r.paternalSurname ||
-              (!r.maternalSurname ? r.lastName : ""),
-            r.surnamesUnknown
-              ? ""
-              : r.maternalSurname,
+            r.paternalSurname,
+            r.maternalSurname,
           ]
             .filter(Boolean)
             .join(" "),
         )}
 
-        {r.surnamesUnknown &&
-          summary("Apellidos", "Se desconocen")}
-
+   
         {summary(
           "Edad",
           isUnknownInformation(r.ageMode)

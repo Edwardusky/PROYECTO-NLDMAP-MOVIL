@@ -24,9 +24,6 @@ export function ReportIdentificationStep({
 }: ReportStepProps) {
   const s = useFormStyles();
 
-  const unknownSurnames =
-    r.surnamesUnknown === true;
-
   return (
     <>
       <View style={s.card}>
@@ -35,12 +32,6 @@ export function ReportIdentificationStep({
           style={s.heading}
         >
           Datos personales
-        </Text>
-
-        <Text style={s.body}>
-          Escribe los datos tal como los conoces.
-          No inventes información para completar
-          los campos.
         </Text>
 
         <Field
@@ -55,63 +46,29 @@ export function ReportIdentificationStep({
           autoCorrect={false}
         />
 
-        <Text style={s.label}>
-          Apellidos
-        </Text>
-
-        <Text style={s.body}>
-          Indica el apellido paterno, materno
-          o ambos. Si no conoces ninguno,
-          selecciona esa opción.
-        </Text>
-
         <Field
-          label="Apellido paterno · Opcional individualmente"
-          placeholder="Primer apellido"
-          value={r.paternalSurname ?? ""}
+          label="Apellido paterno · Obligatorio"
+          placeholder="Ej. García"
+          value={r.paternalSurname}
           onChangeText={(value) =>
             onUpdate("paternalSurname", value)
           }
-          editable={!unknownSurnames}
           error={errors.paternalSurname}
           autoCapitalize="words"
           autoCorrect={false}
         />
 
         <Field
-          label="Apellido materno · Opcional individualmente"
-          placeholder="Segundo apellido"
-          value={r.maternalSurname ?? ""}
+          label="Apellido materno · Obligatorio"
+          placeholder="Ej. López"
+          value={r.maternalSurname}
           onChangeText={(value) =>
             onUpdate("maternalSurname", value)
           }
-          editable={!unknownSurnames}
+          error={errors.maternalSurname}
           autoCapitalize="words"
           autoCorrect={false}
         />
-
-        <Choices
-          label="¿Se desconocen ambos apellidos?"
-          options={["No", "Sí"]}
-          value={unknownSurnames ? "Sí" : "No"}
-          onChange={(value) =>
-            onUpdate(
-              "surnamesUnknown",
-              value === "Sí"
-            )
-          }
-        />
-
-        {!!r.lastName?.trim() &&
-          !r.paternalSurname?.trim() &&
-          !r.maternalSurname?.trim() && (
-            <Text style={s.body}>
-              Apellidos guardados anteriormente:
-              {" "}{r.lastName}.
-              Sepáralos en los campos nuevos
-              o indica que los desconoces.
-            </Text>
-          )}
       </View>
 
       <View style={s.card}>
@@ -123,9 +80,9 @@ export function ReportIdentificationStep({
         </Text>
 
         <Text style={s.body}>
-          Estos datos ayudan a identificar a
-          la persona. Puedes indicar una edad
-          aproximada o que la desconoces.
+          Indica la edad conocida o aproximada.
+          Si no la conoces, selecciona
+          «Se desconoce».
         </Text>
 
         <Choices
@@ -161,18 +118,28 @@ export function ReportIdentificationStep({
           />
         )}
 
+
         <Choices
-          label="Sexo · Opcional"
+          label="Sexo · Obligatorio"
           options={[
             "Mujer",
             "Hombre",
-            "No se sabe",
           ]}
           value={r.sex}
           onChange={(value) =>
             onUpdate("sex", value)
           }
         />
+
+        {errors.sex && (
+          <Text
+            accessibilityRole="alert"
+            style={s.error}
+          >
+            {errors.sex}
+          </Text>
+        )}
+
       </View>
 
       <View style={s.card}>
@@ -184,8 +151,8 @@ export function ReportIdentificationStep({
         </Text>
 
         <Text style={s.body}>
-          Adjunta una fotografía que permita
-          identificar a la persona.
+          Adjunta una fotografía nítida que
+          permita identificar a la persona.
           Formatos admitidos: JPG, JPEG o PNG.
           Tamaño máximo: 5 MB.
         </Text>

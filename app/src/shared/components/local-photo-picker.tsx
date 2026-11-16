@@ -8,7 +8,10 @@ import {
   Text,
   View,
 } from "react-native";
-
+import {
+  prepareReportPhoto,
+  PhotoPreparationError,
+} from "@/shared/utils/prepare-report-photo";
 import {
   loadImagePicker,
   MissingNativeFeatureError,
@@ -36,6 +39,8 @@ export function LocalPhotoPicker({
   required = false,
   validationError,
 }: Props) {
+  const [optimizationInfo, setOptimizationInfo] =
+    useState<string | null>(null);
   const { colors: c } = useAppTheme();
   const s = useFormStyles();
 
@@ -60,6 +65,7 @@ export function LocalPhotoPicker({
     running.current = true;
     setBusy(true);
     setError(null);
+    setOptimizationInfo(null);
     setSettings(false);
 
     try {
@@ -112,39 +118,33 @@ export function LocalPhotoPicker({
         throw new Error("No image");
       }
 
-      const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-      ];
 
-      if (
-        asset.mimeType &&
-        !allowedTypes.includes(asset.mimeType)
-      ) {
-        setError(
-          "Formato no admitido. Selecciona una fotografía JPG, JPEG o PNG."
+      const prepared = await prepareReportPhoto(asset);
+
+      if (!mounted.current) return;
+
+      // Guardamos la URI de la imagen preparada,
+      // no necesariamente la URI original.
+      onChange(prepared.uri);
+
+      if (prepared.optimized) {
+        const sizeMB = (
+          prepared.sizeBytes / (1024 * 1024)
+        ).toFixed(2);
+
+        setOptimizationInfo(
+          `Fotografía optimizada correctamente (${sizeMB} MB).`
         );
-        return;
       }
-
-      const maxBytes = 5 * 1024 * 1024;
-
-      if (
-        typeof asset.fileSize === "number" &&
-        asset.fileSize > maxBytes
-      ) {
-        setError(
-          "La imagen supera los 5 MB permitidos. Selecciona otra fotografía."
-        );
-        return;
-      }
-
-      // Se utiliza la misma propiedad para ambas fuentes.
-      onChange(asset.uri);
+      
     } catch (cause) {
       if (!mounted.current) return;
 
       if (cause instanceof MissingNativeFeatureError) {
+        setError(cause.message);
+        return;
+      }
+      if (cause instanceof PhotoPreparationError) {
         setError(cause.message);
         return;
       }
@@ -160,9 +160,9 @@ export function LocalPhotoPicker({
       setError(
         denied
           ? "No se pudo acceder a la cámara o a la foto. Revisa los permisos en Ajustes."
-          : source === "camera"
-            ? "No se pudo abrir la cámara. Comprueba que esté disponible e inténtalo nuevamente."
-            : "No se pudo abrir la galería. Inténtalo nuevamente."
+          : "No se pudo procesar la fotografía. " +
+          "Inténtalo nuevamente y comprueba que la aplicación incluya " +
+          "los módulos de optimización."
       );
     } finally {
       running.current = false;
@@ -177,6 +177,7 @@ export function LocalPhotoPicker({
     onChange(null);
     setError(null);
     setSettings(false);
+    setOptimizationInfo(null);
   }
 
   return (
@@ -218,10 +219,6 @@ export function LocalPhotoPicker({
         </View>
       )}
 
-      <Text style={s.body}>
-        Vista previa local. La imagen no se envía
-        ni se publica desde este selector.
-      </Text>
 
       {/* Seleccionar una imagen existente */}
       <Action
@@ -259,6 +256,15 @@ export function LocalPhotoPicker({
           disabled={busy}
           onPress={removePhoto}
         />
+      )}
+
+      {optimizationInfo && (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={s.body}
+        >
+          {optimizationInfo}
+        </Text>
       )}
 
       {/* Errores */}

@@ -15,16 +15,24 @@ const {
 } = require("../src/features/reports/model/report-draft.ts");
 const { emptyProfile } = require("../src/features/profile/model/profile.ts");
 
+
 const draft = () => ({
   ...emptyReport,
+
   firstName: "Ejemplo",
-  paternalSurname: "Apellido",
+  paternalSurname: "García",
+  maternalSurname: "López",
+  sex: "Mujer",
+
   photo: "file:///persona.jpg",
+
   coordinate: [-98.2, 19.4],
   story: "Relato",
+
   reporterName: "Contacto",
   reporterEmail: "contacto@example.com",
 });
+
 
 test("visible information options round-trip to canonical values and back", () => {
   assert.deepEqual(INFORMATION_OPTIONS, [
@@ -153,44 +161,58 @@ test("unknown modes do not bypass identification, description, location or conta
 });
 
 
-test("identification requires names, a surname or explicit unknown, and photo", () => {
+test("identification validates both surnames independently", () => {
+  // Datos completamente válidos.
   const report = draft();
 
-  assert.deepEqual(reportErrors(report, 0), {});
+  assert.deepEqual(
+    reportErrors(report, 0),
+    {}
+  );
 
-  const noSurnames = {
+  // Falta el apellido paterno.
+  const missingPaternal = reportErrors({
     ...report,
     paternalSurname: "",
+  }, 0);
+
+  assert.ok(missingPaternal.paternalSurname);
+
+  // Falta el apellido materno.
+  const missingMaternal = reportErrors({
+    ...report,
     maternalSurname: "",
-  };
+  }, 0);
 
-  assert.ok(
-    reportErrors(noSurnames, 0).paternalSurname
-  );
+  assert.ok(missingMaternal.maternalSurname);
 
-  assert.deepEqual(
-    reportErrors({
-      ...noSurnames,
-      surnamesUnknown: true,
-    }, 0),
-    {}
-  );
+  // Ambos apellidos contienen solo espacios.
+  const missingBoth = reportErrors({
+    ...report,
+    paternalSurname: "   ",
+    maternalSurname: "   ",
+  }, 0);
 
-  assert.deepEqual(
-    reportErrors({
-      ...noSurnames,
-      maternalSurname: "López",
-    }, 0),
-    {}
-  );
+  assert.ok(missingBoth.paternalSurname);
+  assert.ok(missingBoth.maternalSurname);
 
-  assert.ok(
-    reportErrors({
-      ...report,
-      photo: null,
-    }, 0).photo
-  );
+  // Falta el nombre.
+  const missingName = reportErrors({
+    ...report,
+    firstName: "",
+  }, 0);
+
+  assert.ok(missingName.firstName);
+
+  // Falta la fotografía obligatoria.
+  const missingPhoto = reportErrors({
+    ...report,
+    photo: null,
+  }, 0);
+
+  assert.ok(missingPhoto.photo);
 });
+
 
 test("approximate age is accepted when provided", () => {
   const report = {
@@ -206,5 +228,44 @@ test("approximate age is accepted when provided", () => {
       ...report,
       age: "",
     }, 0).age
+  );
+});
+
+
+test("sex is mandatory and accepts only Mujer or Hombre", () => {
+  const report = draft();
+
+  // Mujer es válido.
+  assert.equal(
+    reportErrors({
+      ...report,
+      sex: "Mujer",
+    }, 0).sex,
+    undefined
+  );
+
+  // Hombre es válido.
+  assert.equal(
+    reportErrors({
+      ...report,
+      sex: "Hombre",
+    }, 0).sex,
+    undefined
+  );
+
+  // Un valor vacío debe rechazarse.
+  assert.ok(
+    reportErrors({
+      ...report,
+      sex: "",
+    }, 0).sex
+  );
+
+  // La opción antigua ya no es válida.
+  assert.ok(
+    reportErrors({
+      ...report,
+      sex: "No se sabe",
+    }, 0).sex
   );
 });

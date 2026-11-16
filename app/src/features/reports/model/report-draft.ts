@@ -18,7 +18,6 @@ export type Report = {
   // Campos nuevos de identificación.
   paternalSurname: string;
   maternalSurname: string;
-  surnamesUnknown: boolean;
   // Campo heredado de borradores anteriores.
   // Lo conservamos temporalmente para no perder información.
   lastName: string;
@@ -59,11 +58,10 @@ export const emptyReport: Report = {
   firstName: "",
   paternalSurname: "",
   maternalSurname: "",
-  surnamesUnknown: false,
   lastName: "",
   ageMode: UNKNOWN_INFORMATION,
   age: "",
-  sex: "No se sabe",
+  sex: "",
   photo: null,
   height: "",
   heightUnit: "cm",
@@ -146,19 +144,21 @@ export function reportErrors(
 ): Record<string, string> {
   const errors: Record<string, string> = {};
 
+
   if (step === 0) {
     if (!report.firstName.trim()) {
       errors.firstName =
-        "Escribe el nombre o nombres de la persona reportada.";
+        "El nombre de la persona es obligatorio.";
     }
 
-    const hasSurname =
-      !!report.paternalSurname?.trim() ||
-      !!report.maternalSurname?.trim();
-
-    if (!report.surnamesUnknown && !hasSurname) {
+    if (!report.paternalSurname?.trim()) {
       errors.paternalSurname =
-        "Indica al menos un apellido o selecciona que ambos se desconocen.";
+        "El apellido paterno es obligatorio.";
+    }
+
+    if (!report.maternalSurname?.trim()) {
+      errors.maternalSurname =
+        "El apellido materno es obligatorio.";
     }
 
     if (
@@ -169,7 +169,15 @@ export function reportErrors(
       )
     ) {
       errors.age =
-        "Introduce una edad de 0 a 120 años o selecciona Se desconoce.";
+        "Introduce una edad entre 0 y 120 años o selecciona Se desconoce.";
+    }
+
+    if (
+      report.sex !== "Mujer" &&
+      report.sex !== "Hombre"
+    ) {
+      errors.sex =
+        "Selecciona el sexo de la persona reportada.";
     }
 
     if (!report.photo) {

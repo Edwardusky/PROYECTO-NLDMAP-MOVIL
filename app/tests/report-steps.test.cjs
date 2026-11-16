@@ -122,11 +122,26 @@ function find(tree, type, label) {
 function text(tree) {
   return tree.map(node => typeof node === "object" ? text(node.props.children) : String(node)).join("");
 }
+
 const valid = () => ({
-  ...emptyReport, started: true, firstName: "Persona", coordinate: [-98.2, 19.4],
-  story: "Relato", reporterName: "Contacto", reporterEmail: "contacto@example.com", paternalSurname: "Apellido",
+  ...emptyReport,
+  started: true,
+
+  firstName: "Persona",
+  paternalSurname: "García",
+  maternalSurname: "López",
+  sex: "Mujer",
+
   photo: "file:///persona.jpg",
+
+  coordinate: [-98.2, 19.4],
+  story: "Relato",
+
+  reporterName: "Contacto",
+  reporterEmail: "contacto@example.com",
 });
+
+
 
 
 test("identification binds fields, photo and canonical choices while preserving the draft across steps", () => {
@@ -134,14 +149,18 @@ test("identification binds fields, photo and canonical choices while preserving 
 
   let tree = f.render();
 
+  // Editar los nombres.
   find(
     tree,
     "Field",
     "Nombre(s) · Obligatorio"
   ).onChangeText("Nombre editado");
 
-  find(tree, "LocalPhotoPicker")
-    .onChange("file:///persona.jpg");
+  // Conservar la fotografía.
+  find(
+    tree,
+    "LocalPhotoPicker"
+  ).onChange("file:///persona.jpg");
 
   tree = f.render();
 
@@ -155,11 +174,13 @@ test("identification binds fields, photo and canonical choices while preserving 
     "file:///persona.jpg"
   );
 
+  // La edad inicia como desconocida.
   assert.equal(
     find(tree, "Choices", "Información sobre la edad").value,
     "Se desconoce"
   );
 
+  // Indicar que la edad es conocida.
   find(
     tree,
     "Choices",
@@ -168,11 +189,12 @@ test("identification binds fields, photo and canonical choices while preserving 
 
   tree = f.render();
 
+  // Intentar avanzar sin capturar la edad.
   find(tree, "Action", "Continuar").onPress();
 
   tree = f.render();
 
-  // No debe avanzar si falta la edad conocida.
+  // Debe permanecer en identificación.
   assert.equal(f.state.step, 0);
 
   assert.ok(
@@ -183,16 +205,23 @@ test("identification binds fields, photo and canonical choices while preserving 
     ).error
   );
 
+  // Capturar una edad válida.
   find(
     tree,
     "Field",
     "Edad en años · Obligatoria"
   ).onChangeText("28");
 
-  find(f.render(), "Action", "Continuar").onPress();
+  find(
+    f.render(),
+    "Action",
+    "Continuar"
+  ).onPress();
 
+  // Ahora debe avanzar a descripción.
   assert.equal(f.state.step, 1);
 
+  // Regresar a identificación.
   find(
     f.render(),
     "Action",
@@ -203,14 +232,32 @@ test("identification binds fields, photo and canonical choices while preserving 
 
   assert.equal(f.state.step, 0);
 
+  // Verificar que no se perdieron los datos.
   assert.equal(
-    find(tree, "Field", "Edad en años · Obligatoria").value,
+    find(
+      tree,
+      "Field",
+      "Edad en años · Obligatoria"
+    ).value,
     "28"
   );
 
   assert.equal(
-    find(tree, "Choices", "Información sobre la edad").value,
-    "Conocida"
+    find(
+      tree,
+      "Field",
+      "Apellido paterno · Obligatorio"
+    ).value,
+    "García"
+  );
+
+  assert.equal(
+    find(
+      tree,
+      "Field",
+      "Apellido materno · Obligatorio"
+    ).value,
+    "López"
   );
 
   assert.equal(
@@ -218,41 +265,121 @@ test("identification binds fields, photo and canonical choices while preserving 
     "file:///persona.jpg"
   );
 
+  // Volver a indicar que la edad se desconoce.
   find(
     tree,
     "Choices",
     "Información sobre la edad"
   ).onChange("Se desconoce");
 
-  assert.equal(f.state.report.ageMode, "No se sabe");
+  assert.equal(
+    f.state.report.ageMode,
+    "No se sabe"
+  );
+
+  // El valor anterior se conserva en el borrador,
+  // aunque el campo deja de mostrarse.
   assert.equal(f.state.report.age, "28");
 
   assert.ok(
     !nodes(f.render()).some(
-      (node) =>
+      node =>
         node.props.label === "Edad en años · Obligatoria"
     )
   );
 });
 
 
-test("identification preserves separate surnames and unknown surname selection", () => {
+test("identification requires both separate surnames", () => {
   const f = form({ report: valid() });
 
   let tree = f.render();
 
+  // Confirmar que la opción antigua ya no existe
+  // mientras estamos en el paso de identificación.
+  assert.ok(
+    !nodes(tree).some(
+      node =>
+        node.props.label ===
+        "¿Se desconocen ambos apellidos?"
+    )
+  );
+
+  // Vaciar los dos apellidos.
   find(
     tree,
     "Field",
-    "Apellido paterno · Opcional individualmente"
+    "Apellido paterno · Obligatorio"
+  ).onChangeText("");
+
+  find(
+    f.render(),
+    "Field",
+    "Apellido materno · Obligatorio"
+  ).onChangeText("");
+
+  // Intentar avanzar.
+  find(
+    f.render(),
+    "Action",
+    "Continuar"
+  ).onPress();
+
+  // Debe permanecer en la sección 1.
+  assert.equal(f.state.step, 0);
+
+  tree = f.render();
+
+  // Ambos campos deben presentar errores.
+  assert.ok(
+    find(
+      tree,
+      "Field",
+      "Apellido paterno · Obligatorio"
+    ).error
+  );
+
+  assert.ok(
+    find(
+      tree,
+      "Field",
+      "Apellido materno · Obligatorio"
+    ).error
+  );
+
+  // Completar únicamente el paterno.
+  find(
+    tree,
+    "Field",
+    "Apellido paterno · Obligatorio"
   ).onChangeText("García");
 
   find(
-    tree,
+    f.render(),
+    "Action",
+    "Continuar"
+  ).onPress();
+
+  // Sigue faltando el materno.
+  assert.equal(f.state.step, 0);
+
+  // Completar el materno.
+  find(
+    f.render(),
     "Field",
-    "Apellido materno · Opcional individualmente"
+    "Apellido materno · Obligatorio"
   ).onChangeText("López");
 
+  // Ahora sí debe avanzar.
+  find(
+    f.render(),
+    "Action",
+    "Continuar"
+  ).onPress();
+
+  assert.equal(f.state.step, 1);
+
+  // Comprobar que ambos valores se guardaron.
   assert.equal(
     f.state.report.paternalSurname,
     "García"
@@ -263,61 +390,66 @@ test("identification preserves separate surnames and unknown surname selection",
     "López"
   );
 
+
+});
+
+
+test("identification requires Mujer or Hombre", () => {
+  const f = form({
+    report: {
+      ...valid(),
+      sex: "",
+    },
+  });
+
+  let tree = f.render();
+
+  const sexField = find(
+    tree,
+    "Choices",
+    "Sexo · Obligatorio"
+  );
+
+  // Solo se muestran dos opciones.
+  assert.deepEqual(
+    Array.from(sexField.options),
+    ["Mujer", "Hombre"]
+  );
+
+  // No hay una opción seleccionada inicialmente.
+  assert.equal(sexField.value, "");
+
+  // Intentar avanzar sin seleccionar.
+  find(tree, "Action", "Continuar").onPress();
+
+  assert.equal(f.state.step, 0);
+
   tree = f.render();
 
+  // Debe mostrarse un error.
+  assert.ok(
+    nodes(tree).some(
+      node =>
+        node.props.accessibilityRole === "alert"
+    )
+  );
+
+  // Elegir una opción válida.
   find(
     tree,
     "Choices",
-    "¿Se desconocen ambos apellidos?"
-  ).onChange("Sí");
+    "Sexo · Obligatorio"
+  ).onChange("Mujer");
 
-  assert.equal(
-    f.state.report.surnamesUnknown,
-    true
-  );
-
-  tree = f.render();
-
-  // Ambos campos deben quedar deshabilitados.
-  assert.equal(
-    find(
-      tree,
-      "Field",
-      "Apellido paterno · Opcional individualmente"
-    ).editable,
-    false
-  );
-
-  assert.equal(
-    find(
-      tree,
-      "Field",
-      "Apellido materno · Opcional individualmente"
-    ).editable,
-    false
-  );
-
-  // Los datos se conservan si se cambia la elección.
   find(
-    tree,
-    "Choices",
-    "¿Se desconocen ambos apellidos?"
-  ).onChange("No");
+    f.render(),
+    "Action",
+    "Continuar"
+  ).onPress();
 
-  assert.equal(
-    f.state.report.surnamesUnknown,
-    false
-  );
-
-  assert.equal(
-    f.state.report.paternalSurname,
-    "García"
-  );
-
-  assert.equal(
-    f.state.report.maternalSurname,
-    "López"
-  );
+  // Ahora puede pasar a la sección 2.
+  assert.equal(f.state.step, 1);
+  assert.equal(f.state.report.sex, "Mujer");
 });
 
 
@@ -386,7 +518,7 @@ test("initialization accepts valid coordinate params once and preserves edited c
 
 test("review includes all captured data and photo, and each edit action returns to its section", () => {
   const report = {
-    ...valid(), lastName: "Apellido", ageMode: "Conocida", age: "28", sex: "Mujer",
+    ...valid(), ageMode: "Conocida", age: "28", sex: "Mujer",
     photo: "file:///persona.jpg", height: "180", heightUnit: "cm", build: "Delgada",
     skin: "Morena", hair: "Negro", clothes: "Camisa", shoes: "Botas",
     marks: [{ id: 4, type: "Tatuaje", area: "Brazo", description: "Estrella" }],
@@ -398,7 +530,7 @@ test("review includes all captured data and photo, and each edit action returns 
   const f = form({ report, step: 4 });
   const tree = f.render();
   const content = text(tree);
-  for (const value of ["Persona Apellido", "28 años", "Mujer", "180 cm", "Delgada", "Morena", "Negro", "Camisa", "Botas", "Tatuaje", "Brazo", "Estrella", "2026-09-01", "12:30", "Ubicación inferida", "Elegida en el mapa", "Tlaxcala", "Apizaco", "Centro", "Parque", "Relato", "Vehículo azul", "Contacto", "contacto@example.com", "1234567890", "Familiar", "Domicilio", "Red social", "no envía ni publica datos", "no está conectado al RNPDNO"]) {
+  for (const value of ["Persona García López", "28 años", "Mujer", "180 cm", "Delgada", "Morena", "Negro", "Camisa", "Botas", "Tatuaje", "Brazo", "Estrella", "2026-09-01", "12:30", "Ubicación inferida", "Elegida en el mapa", "Tlaxcala", "Apizaco", "Centro", "Parque", "Relato", "Vehículo azul", "Contacto", "contacto@example.com", "1234567890", "Familiar", "Domicilio", "Red social", "no envía ni publica datos", "no está conectado al RNPDNO"]) {
     assert.ok(content.includes(value), value);
   }
   assert.equal(find(tree, "Image").source.uri, report.photo);
