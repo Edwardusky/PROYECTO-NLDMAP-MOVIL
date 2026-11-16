@@ -23,6 +23,7 @@ export function ReportIdentificationStep(props: Props) {
         label="Foto de la persona reportada"
         uri={r.photo}
         onChange={(photo) => update("photo", photo)}
+        allowCapture
       />
     </>
   );

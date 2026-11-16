@@ -1,66 +1,272 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { loadImagePicker, MissingNativeFeatureError } from '@/shared/native/native-features';
-import { useEffect, useRef, useState } from 'react';
-import { Image, Linking, StyleSheet, Text, View } from 'react-native';
+
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useEffect, useRef, useState } from "react";
+import {
+  Image,
+  Linking,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+import {
+  loadImagePicker,
+  MissingNativeFeatureError,
+} from "@/shared/native/native-features";
+
 import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { Action, useFormStyles } from "./form-controls";
 
-export function LocalPhotoPicker({ uri, onChange, label }: { uri: string | null; onChange: (uri: string | null) => void; label: string }) {
+type Props = {
+  uri: string | null;
+  onChange: (uri: string | null) => void;
+  label: string;
+  allowCapture?: boolean;
+};
+
+type PhotoSource = "gallery" | "camera";
+
+export function LocalPhotoPicker({
+  uri,
+  onChange,
+  label,
+  allowCapture = false,
+}: Props) {
   const { colors: c } = useAppTheme();
   const s = useFormStyles();
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState(false);
+
   const mounted = useRef(true);
   const running = useRef(false);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
-  async function select() {
+
+  useEffect(() => {
+    mounted.current = true;
+
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  async function choosePhoto(source: PhotoSource) {
     if (running.current) return;
+
     running.current = true;
-    setBusy(true); setError(null); setSettings(false);
+    setBusy(true);
+    setError(null);
+    setSettings(false);
+
     try {
       const ImagePicker = await loadImagePicker();
+
       if (!mounted.current) return;
-      // Still images via the system picker need no broad library permission.
-      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, allowsMultipleSelection: false, quality: 0.8, exif: false });
+
+      // Solicitar permiso solamente al usar la cámara.
+      if (source === "camera") {
+        const permission =
+          await ImagePicker.requestCameraPermissionsAsync();
+
+        if (!mounted.current) return;
+
+        if (!permission.granted) {
+          setSettings(!permission.canAskAgain);
+
+          setError(
+            permission.canAskAgain
+              ? "Se necesita permiso para utilizar la cámara. Puedes volver a intentarlo."
+              : "El acceso a la cámara está deshabilitado. Habilítalo desde Ajustes."
+          );
+
+          return;
+        }
+      }
+
+      // Abrir la cámara o la galería del dispositivo.
+      const result =
+        source === "camera"
+          ? await ImagePicker.launchCameraAsync({
+              mediaTypes: ["images"],
+              allowsEditing: false,
+              quality: 0.8,
+              exif: false,
+            })
+          : await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ["images"],
+              allowsEditing: false,
+              allowsMultipleSelection: false,
+              quality: 0.8,
+              exif: false,
+            });
+
       if (!mounted.current || result.canceled) return;
-      const asset = result.assets[0];
-      if (!asset?.uri) throw new Error('No image');
+
+      const asset = result.assets?.[0];
+
+      if (!asset?.uri) {
+        throw new Error("No image");
+      }
+
+      // Se utiliza la misma propiedad para ambas fuentes.
       onChange(asset.uri);
     } catch (cause) {
       if (!mounted.current) return;
+
       if (cause instanceof MissingNativeFeatureError) {
         setError(cause.message);
         return;
       }
-      const code = String((cause as { code?: string })?.code ?? '');
+
+      const code = String(
+        (cause as { code?: string })?.code ?? ""
+      );
+
       const denied = /permission|denied/i.test(code);
+
       setSettings(denied);
-      setError(denied ? 'No se pudo acceder a la foto. Revisa los permisos en Ajustes.' : 'No se pudo abrir la foto. Inténtalo de nuevo.');
+
+      setError(
+        denied
+          ? "No se pudo acceder a la cámara o a la foto. Revisa los permisos en Ajustes."
+          : source === "camera"
+            ? "No se pudo abrir la cámara. Comprueba que esté disponible e inténtalo nuevamente."
+            : "No se pudo abrir la galería. Inténtalo nuevamente."
+      );
     } finally {
       running.current = false;
-      if (mounted.current) setBusy(false);
+
+      if (mounted.current) {
+        setBusy(false);
+      }
     }
   }
-  return <View style={s.field}>
-    <Text style={s.label}>{label} · Opcional</Text>
-    {uri ? <Image source={{ uri }} accessibilityLabel={`Vista previa: ${label}`} style={[
-      styles.image,
-      { backgroundColor: c.surfaceAlt },
-    ]} resizeMode="contain"
-      onError={() => setError('La vista previa ya no está disponible. Selecciona la foto otra vez.')} />
-      : <View style={[
-        styles.placeholder,
-        { backgroundColor: c.surfaceAlt },
-      ]} accessible accessibilityLabel="Sin foto"><Ionicons name="person-outline" size={48} color={c.muted} /></View>}
-    <Text style={s.body}>Vista previa local. No se sube ni se guarda en una cuenta.</Text>
-    <Action secondary label={busy ? 'Abriendo galería…' : uri ? 'Reemplazar foto' : 'Seleccionar foto'} onPress={select} disabled={busy} />
-    {uri && <Action secondary label="Quitar foto" disabled={busy} onPress={() => { onChange(null); setError(null); }} />}
-    {error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
-    {settings && <Action secondary label="Abrir Ajustes" onPress={() => { Linking.openSettings().catch(() => setError('No se pudieron abrir los Ajustes. Ábrelos desde tu teléfono.')); }} />}
-  </View>;
+
+  function removePhoto() {
+    onChange(null);
+    setError(null);
+    setSettings(false);
+  }
+
+  return (
+    <View style={s.field}>
+      <Text style={s.label}>
+        {label} · Opcional
+      </Text>
+
+      {/* Vista previa */}
+      {uri ? (
+        <Image
+          source={{ uri }}
+          accessibilityLabel={`Vista previa: ${label}`}
+          style={[
+            styles.image,
+            { backgroundColor: c.surfaceAlt },
+          ]}
+          resizeMode="contain"
+          onError={() =>
+            setError(
+              "La vista previa ya no está disponible. Selecciona o captura otra foto."
+            )
+          }
+        />
+      ) : (
+        <View
+          style={[
+            styles.placeholder,
+            { backgroundColor: c.surfaceAlt },
+          ]}
+          accessible
+          accessibilityLabel="Sin foto"
+        >
+          <Ionicons
+            name="person-outline"
+            size={48}
+            color={c.muted}
+          />
+        </View>
+      )}
+
+      <Text style={s.body}>
+        Vista previa local. La imagen no se envía
+        ni se publica desde este selector.
+      </Text>
+
+      {/* Seleccionar una imagen existente */}
+      <Action
+        secondary
+        label={
+          busy
+            ? "Procesando imagen…"
+            : uri
+              ? "Reemplazar desde galería"
+              : "Seleccionar foto"
+        }
+        onPress={() => {
+          void choosePhoto("gallery");
+        }}
+        disabled={busy}
+      />
+
+      {/* Tomar una nueva fotografía */}
+      {allowCapture && (
+        <Action
+          secondary
+          label="Tomar foto"
+          onPress={() => {
+            void choosePhoto("camera");
+          }}
+          disabled={busy}
+        />
+      )}
+
+      {/* Eliminar imagen actual */}
+      {uri && (
+        <Action
+          secondary
+          label="Quitar foto"
+          disabled={busy}
+          onPress={removePhoto}
+        />
+      )}
+
+      {/* Errores */}
+      {error && (
+        <Text accessibilityRole="alert" style={s.error}>
+          {error}
+        </Text>
+      )}
+
+      {/* Permisos deshabilitados */}
+      {settings && (
+        <Action
+          secondary
+          label="Abrir Ajustes"
+          onPress={() => {
+            Linking.openSettings().catch(() => {
+              setError(
+                "No se pudieron abrir los Ajustes. Ábrelos desde tu teléfono."
+              );
+            });
+          }}
+        />
+      )}
+    </View>
+  );
 }
+
 const styles = StyleSheet.create({
-  image: { width: '100%', height: 200, borderRadius: 16 },
-  placeholder: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' },
+  image: {
+    width: "100%",
+    height: 200,
+    borderRadius: 16,
+  },
+
+  placeholder: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

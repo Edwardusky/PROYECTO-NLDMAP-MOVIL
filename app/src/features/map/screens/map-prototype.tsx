@@ -1,3 +1,4 @@
+import { AccountDrawer } from "@/features/profile/components/account-drawer";
 import { useMapSelection } from "../hooks/use-map-selection";
 import { MapFooter } from "../components/map-footer";
 import { MapReportPopup } from "../components/map-report-popup";
@@ -48,12 +49,12 @@ export default function MapPrototype() {
     [c],
   );
 
-
   const [caseStatuses, setCaseStatuses] = useState<CaseStatus[]>([
     ...CASE_STATUSES,
   ]);
   const [showSightings, setShowSightings] = useState(true);
   const [panel, setPanel] = useState<FilterPanel | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const visibleCases = filterCases(DEMO_CASES, caseStatuses);
   const {
     mapRef, cameraRef, viewport, resizeViewport,
@@ -86,24 +87,44 @@ export default function MapPrototype() {
       edges={["top", "bottom", "left", "right"]}
     >
       <View style={styles.header}>
+
         <View style={styles.topRow}>
+          {/* Menú y logotipo */}
+          <View style={styles.headerLeft}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Abrir menú de navegación"
+              accessibilityState={{ expanded: drawerOpen }}
+              onPress={() => setDrawerOpen(true)}
+              style={({ pressed }) => [
+                styles.menuButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons
+                name="menu-outline"
+                size={28}
+                color={c.text}
+                accessible={false}
+              />
+            </Pressable>
 
-          <View
-            style={styles.brand}
-            accessible
-            accessibilityRole="header"
-            accessibilityLabel="NLDMAP"
-          >
-            <View style={styles.brandBox}>
-              <Text style={styles.brandLetter}>N</Text>
+            {/* Logotipo NLDMAP */}
+            <View
+              style={styles.brand}
+              accessible
+              accessibilityLabel="NLDMAP"
+            >
+              <View style={styles.brandBox}>
+                <Text style={styles.brandLetter}>N</Text>
+              </View>
+
+              <Text style={styles.title}>LDMAP</Text>
             </View>
-
-            <Text style={styles.title}>LDMAP</Text>
           </View>
 
-
+          {/* Tema claro / oscuro */}
           <View style={styles.topActions}>
-            {/* Botón de modo claro / oscuro */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
@@ -123,33 +144,9 @@ export default function MapPrototype() {
                 accessible={false}
               />
             </Pressable>
-
-            {/* Botón de perfil */}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Perfil. Abrir Iniciar sesión"
-              onPress={() => {
-                leaveSelection();
-                router.push("/login");
-              }}
-              style={({ pressed }) => [
-                styles.topButton,
-                { backgroundColor: c.surfaceAlt },
-                pressed && styles.pressed,
-              ]}
-            >
-              <Ionicons
-                name="person-circle-outline"
-                size={24}
-                color={c.text}
-                accessible={false}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              />
-            </Pressable>
           </View>
-
         </View>
+
         <Text style={[styles.body, { color: c.muted }]}>Aplicación móvil para gestión de reportes de personas no localizadas y desaparecidas
         </Text>
       </View>
@@ -282,22 +279,103 @@ export default function MapPrototype() {
         showSightings={showSightings}
         onToggleSightings={() => setShowSightings((value) => !value)}
       />
+
+      <AccountDrawer
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onNavigate={(route) => {
+          setDrawerOpen(false);
+          leaveSelection();
+          router.push(route);
+        }}
+      />
+
     </SafeAreaView>
   );
 }
 
+
 function createStyles(c: Palette) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.surface },
-    header: { paddingHorizontal: 16, paddingVertical: 8, gap: 2 },
+    // Contenedor principal
+    screen: {
+      flex: 1,
+      backgroundColor: c.surface,
+    },
+
+    // Encabezado
+    header: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      gap: 2,
+    },
+
+    // Distribución horizontal del encabezado
     topRow: {
       flexDirection: "row",
-      flexWrap: "wrap",
       alignItems: "center",
       justifyContent: "space-between",
       gap: 8,
     },
-    topActions: { flexDirection: "row", gap: 8 },
+
+    // Grupo izquierdo: menú hamburguesa + logotipo
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      flexShrink: 1,
+    },
+
+    // Botón de menú hamburguesa
+    menuButton: {
+      width: 48,
+      height: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 12,
+      backgroundColor: c.surfaceAlt,
+    },
+
+    // Logotipo completo NLDMAP
+    brand: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      flexShrink: 1,
+    },
+
+    // Recuadro redondeado de la N
+    brandBox: {
+      width: 36,
+      height: 36,
+      borderWidth: 2,
+      borderColor: c.text,
+      borderRadius: 9,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    // Letra N
+    brandLetter: {
+      color: c.text,
+      fontSize: 22,
+      fontWeight: "800",
+    },
+
+    // Texto LDMAP
+    title: {
+      color: c.text,
+      fontSize: 21,
+      fontWeight: "800",
+      flexShrink: 1,
+    },
+
+    // Acciones de la derecha (tema claro / oscuro)
+    topActions: {
+      flexDirection: "row",
+      gap: 8,
+    },
+
     topButton: {
       minWidth: 56,
       minHeight: 48,
@@ -308,11 +386,28 @@ function createStyles(c: Palette) {
       borderRadius: 12,
       backgroundColor: c.surfaceAlt,
     },
-    title: { color: c.text, fontSize: 21, fontWeight: "800", flexShrink: 1 },
-    body: { color: c.muted, fontSize: 12, lineHeight: 18 },
-    caption: { color: c.muted, fontSize: 11, lineHeight: 16 },
-    viewport: { flex: 1, overflow: "hidden", backgroundColor: c.mapPlaceholder },
-    // Separate clear zones for the compass (top) and attribution (bottom).
+
+    // Textos secundarios del encabezado
+    body: {
+      color: c.muted,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+
+    caption: {
+      color: c.muted,
+      fontSize: 11,
+      lineHeight: 16,
+    },
+
+    // Contenedor del mapa
+    viewport: {
+      flex: 1,
+      overflow: "hidden",
+      backgroundColor: c.mapPlaceholder,
+    },
+
+    // Indicador central al elegir ubicación de un reporte
     target: {
       position: "absolute",
       width: 36,
@@ -324,30 +419,18 @@ function createStyles(c: Palette) {
       alignItems: "center",
       justifyContent: "center",
     },
-    targetDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: c.draft },
-    pressed: { opacity: 0.7 },
 
-    brand: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      flexShrink: 1,
+    targetDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: c.draft,
     },
 
-    brandBox: {
-      width: 36,
-      height: 36,
-      borderWidth: 2,
-      borderColor: c.text,
-      borderRadius: 9,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    brandLetter: {
-      color: c.text,
-      fontSize: 22,
-      fontWeight: "800",
+    // Retroalimentación visual al presionar botones
+    pressed: {
+      opacity: 0.7,
     },
   });
 }
+
