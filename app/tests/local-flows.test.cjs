@@ -1,3 +1,8 @@
+const {
+  getMapSheetSnapPoints,
+} = require(
+  "../src/features/map/utils/map-sheet-layout.ts"
+);
 const test = require("node:test");
 const assert = require("node:assert/strict");
 require("./register-typescript.cjs");
@@ -270,3 +275,27 @@ test("semantic text and component boundaries meet target contrast on app surface
   }
   assert.ok(contrast(c.onAction, c.action) >= 4.5);
 });
+
+test("map bottom sheet has three ordered adaptive positions", () => {
+  for (const height of [240, 400, 600, 900]) {
+    const points = getMapSheetSnapPoints(height);
+
+    assert.equal(points.length, 3);
+
+    const [compact, medium, expanded] = points;
+
+    assert.ok(compact > 0);
+    assert.ok(medium > compact);
+    assert.ok(expanded > medium);
+    assert.ok(expanded <= height);
+
+    // El panel compacto mantiene una altura reducida.
+    assert.ok(compact <= 132);
+  }
+
+  const small = getMapSheetSnapPoints(400);
+  const large = getMapSheetSnapPoints(900);
+
+  assert.ok(large[2] > small[2]);
+});
+

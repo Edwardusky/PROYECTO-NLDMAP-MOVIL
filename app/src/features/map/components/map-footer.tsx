@@ -87,7 +87,7 @@ export function MapFooter(props: Props) {
       )}
       {!hasCaseStatuses && (
         <Text style={styles.body}>
-          No hay estados de seguimiento seleccionados. Abre Reportes para
+          No hay estados de seguimiento seleccionados. Abre filtros para
           elegirlos.
         </Text>
       )}
@@ -220,8 +220,7 @@ function createStyles(c: Palette) {
     controlText: { color: c.text, fontSize: 13, fontWeight: "700" },
     pressed: { opacity: 0.7 },
     footerScroll: {
-      maxHeight: "40%",
-      flexGrow: 0,
+      flex: 1,
       backgroundColor: c.surface,
     },
     footer: { paddingHorizontal: 16, paddingVertical: 10, gap: 3 },

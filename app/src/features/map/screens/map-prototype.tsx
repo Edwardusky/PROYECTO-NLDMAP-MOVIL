@@ -4,6 +4,11 @@ import { MapFooter } from "../components/map-footer";
 import { MapReportPopup } from "../components/map-report-popup";
 import { MapToolbar } from "../components/map-toolbar";
 import { MapCaseLayers } from "../components/map-case-layers";
+import { MapBottomSheet } from "../components/map-bottom-sheet";
+import {
+  getMapSheetSnapPoints,
+  type MapSheetIndex,
+} from "../utils/map-sheet-layout";
 import {
   Camera,
   GeoJSONSource,
@@ -18,12 +23,10 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useReportDraft } from "@/features/reports/state/report-draft-context";
 import {
   Alert,
-  Appearance,
   Pressable,
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MapReportList } from "../components/map-report-list";
@@ -59,6 +62,8 @@ export default function MapPrototype() {
   const [panel, setPanel] = useState<FilterPanel | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sheetIndex, setSheetIndex] =
+    useState<MapSheetIndex>(0);
   const visibleCases = filterCases(DEMO_CASES, caseStatuses);
   const {
     mapRef, cameraRef, viewport, resizeViewport,
@@ -68,7 +73,9 @@ export default function MapPrototype() {
     onRegionWillChange, onRegionDidChange, onDidFailLoadingMap, onDidFinishLoadingMap,
   } = useMapSelection(visibleCases);
   const northTop = Math.min(80, viewport.height * 0.15);
-
+  const [compactHeight] = getMapSheetSnapPoints(
+    viewport.height
+  );
   function toggleCaseStatus(status: CaseStatus) {
     const remaining = caseStatuses.includes(status)
       ? caseStatuses.filter((value) => value !== status)
@@ -198,6 +205,10 @@ export default function MapPrototype() {
           style={StyleSheet.absoluteFill}
           mapStyle={isDark ? MAP_STYLE_DARK : MAP_STYLE}
           attribution
+          attributionPosition={{
+            top: 12,
+            left: 12,
+          }}
           compass
           compassPosition={{ top: northTop, right: 24 }}
           onRegionWillChange={onRegionWillChange}
@@ -272,6 +283,8 @@ export default function MapPrototype() {
         {point &&
           selectedCoordinate &&
           panel === null &&
+          !listOpen &&
+          sheetIndex === 0 &&
           !moving &&
           !selecting && (
             <MapReportPopup
@@ -282,12 +295,13 @@ export default function MapPrototype() {
               onOpenReport={(id) => router.push({ pathname: "/case-detail", params: { id } })}
             />
           )}
-        {!selecting && (
+        {!selecting && sheetIndex === 0 && (
           <MapToolbar
             height={viewport.height}
             panel={panel}
             caseCount={caseStatuses.length}
             listOpen={listOpen}
+            bottomOffset={compactHeight + 12}
             onOpen={(nextPanel) => {
               setListOpen(false);
               setPanel(nextPanel);
@@ -298,24 +312,52 @@ export default function MapPrototype() {
             }}
           />
         )}
+
+        <MapBottomSheet
+          viewportHeight={viewport.height}
+          visibleCount={visibleCases.length}
+          selecting={selecting}
+          reportStarted={reportStarted}
+          confirming={confirming}
+          canConfirmLocation={
+            mapReady &&
+            viewport.width > 0 &&
+            viewport.height > 0 &&
+            !moving &&
+            !confirming &&
+            !deviceLocation.loading
+          }
+          onStartReport={startSelection}
+          onContinueReport={() => {
+            router.navigate("/create-report");
+          }}
+          onConfirmLocation={confirmLocation}
+          onCancelSelection={cancelSelection}
+          onIndexChange={setSheetIndex}
+        >
+          <MapFooter
+            deviceLocation={deviceLocation}
+            mapReady={mapReady}
+            confirming={confirming}
+            moving={moving}
+            mapFailed={mapFailed}
+            selecting={selecting}
+            selectionError={selectionError}
+            hasCaseStatuses={caseStatuses.length > 0}
+            visibleCount={visibleCases.length}
+            reportStarted={reportStarted}
+            onConfirm={confirmLocation}
+            onCancel={cancelSelection}
+            onStart={startSelection}
+            onContinue={() => {
+              router.navigate("/create-report");
+            }}
+            onDiscard={confirmDiscardDraft}
+          />
+        </MapBottomSheet>
+
       </View>
-      <MapFooter
-        deviceLocation={deviceLocation}
-        mapReady={mapReady}
-        confirming={confirming}
-        moving={moving}
-        mapFailed={mapFailed}
-        selecting={selecting}
-        selectionError={selectionError}
-        hasCaseStatuses={caseStatuses.length > 0}
-        visibleCount={visibleCases.length}
-        reportStarted={reportStarted}
-        onConfirm={confirmLocation}
-        onCancel={cancelSelection}
-        onStart={startSelection}
-        onContinue={() => router.navigate("/create-report")}
-        onDiscard={confirmDiscardDraft}
-      />
+
       <MapFilterPanel
         panel={panel}
         onClose={() => setPanel(null)}

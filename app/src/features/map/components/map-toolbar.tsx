@@ -19,6 +19,7 @@ type Props = {
   listOpen: boolean;
   onOpen: (panel: FilterPanel) => void;
   onOpenList: () => void;
+  bottomOffset?: number;
 };
 
 export function MapToolbar({
@@ -28,6 +29,7 @@ export function MapToolbar({
   listOpen,
   onOpen,
   onOpenList,
+  bottomOffset = 64,
 }: Props) {
   const { colors: c } = useAppTheme();
   const styles = createStyles(c);
@@ -65,6 +67,7 @@ export function MapToolbar({
       style={[
         styles.rail,
         compact && styles.railCompact,
+        { bottom: bottomOffset },
       ]}
     >
       {controls.map((control) => (

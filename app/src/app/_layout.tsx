@@ -1,6 +1,6 @@
 
 import { useMemo } from "react";
-
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   DarkTheme,
   DefaultTheme,
@@ -97,8 +97,10 @@ function AppNavigator() {
 
 export default function RootLayout() {
   return (
-    <AppThemeProvider>
-      <AppNavigator />
-    </AppThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppThemeProvider>
+        <AppNavigator />
+      </AppThemeProvider>
+    </GestureHandlerRootView>
   );
 }
