@@ -80,6 +80,17 @@ function form({ report = emptyReport, step = 0, profile = emptyProfile, params =
           replace: route => navigation.push(["replace", route]),
         },
       };
+      if (name.endsWith("report-option-picker")) {
+        return {
+          ReportOptionPicker: "ReportOptionPicker",
+        };
+      }
+
+      if (name.endsWith("report-skin-tone-picker")) {
+        return {
+          ReportSkinTonePicker: "ReportSkinTonePicker",
+        };
+      }
       if (name === "@/shared/components/form-controls") return controls;
       if (name === "@/shared/components/local-photo-picker") return { LocalPhotoPicker: "LocalPhotoPicker" };
       if (name.endsWith("profile-context")) return { useProfile: () => ({ profile }) };
@@ -139,6 +150,9 @@ const valid = () => ({
 
   reporterName: "Contacto",
   reporterEmail: "contacto@example.com",
+  clothes: "Sudadera roja",
+  shoes: "Tenis blancos",
+  identifyingDescription: "Usa lentes de armazón negro",
 });
 
 
@@ -453,27 +467,160 @@ test("identification requires Mujer or Hombre", () => {
 });
 
 
-test("description adds, edits and removes marks with stable identifiers and retained physical fields", () => {
-  const mark = { id: 7, type: "Tatuaje", area: "Brazo", description: "Estrella" };
-  const f = form({ report: { ...valid(), marks: [mark] }, step: 1 });
+
+test("description uses mobile selectors and preserves physical data and marks", () => {
+  const mark = {
+    id: 7,
+    type: "Tatuaje",
+    area: "Brazo derecho",
+    description: "Estrella",
+  };
+
+  const f = form({
+    report: {
+      ...valid(),
+      marks: [mark],
+    },
+    step: 1,
+  });
+
   let tree = f.render();
-  find(tree, "Field", "Estatura").onChangeText("1,80");
-  find(tree, "Choices", "Unidad de estatura").onChange("m");
-  find(f.render(), "Action", "Añadir seña particular").onPress();
-  assert.deepEqual(f.state.report.marks.map(mark => mark.id), [7, 8]);
+
+  // Estatura: solo centímetros.
+  find(
+    tree,
+    "Field",
+    "Estatura en centímetros (cm) · Opcional"
+  ).onChangeText("180");
+
+  assert.equal(f.state.report.height, "180");
+
+  // Indicar estatura aproximada.
+  find(
+    f.render(),
+    "Choices",
+    "¿La estatura es aproximada?"
+  ).onChange("Sí");
+
+  assert.equal(
+    f.state.report.heightApproximate,
+    true
+  );
+
+  // Selector de complexión.
+  find(
+    f.render(),
+    "ReportOptionPicker",
+    "Complexión · Opcional"
+  ).onChange("Media");
+
+  assert.equal(f.state.report.build, "Media");
+
+  // Selector visual de tono de piel.
+  find(
+    f.render(),
+    "ReportSkinTonePicker"
+  ).onChange("MST-05");
+
+  assert.equal(f.state.report.skin, "MST-05");
+
+  // Color de cabello mediante catálogo.
+  find(
+    f.render(),
+    "ReportOptionPicker",
+    "Color de cabello · Opcional"
+  ).onChange("Negro");
+
+  // Descripción libre del cabello.
+  find(
+    f.render(),
+    "Field",
+    "Características del cabello · Opcional"
+  ).onChangeText("Corto y ondulado");
+
+  assert.equal(f.state.report.hairColor, "Negro");
+  assert.equal(
+    f.state.report.hairDescription,
+    "Corto y ondulado"
+  );
+
+  // Añadir una segunda seña.
+  find(
+    f.render(),
+    "Action",
+    "Añadir seña particular"
+  ).onPress();
+
+  assert.deepEqual(
+    f.state.report.marks.map((m) => m.id),
+    [7, 8]
+  );
+
   tree = f.render();
-  const types = nodes(tree).filter(node => node.props.label === "Tipo (tatuaje, cicatriz, lunar u otro)");
-  types[1].props.onChangeText("Cicatriz");
-  assert.equal(f.state.report.marks[1].type, "Cicatriz");
-  assert.strictEqual(f.state.report.marks[0], mark);
-  f.render(); f.render();
-  assert.deepEqual(f.state.report.marks.map(mark => mark.id), [7, 8]);
-  find(f.render(), "Action", "Quitar seña 1").onPress();
-  assert.deepEqual(f.state.report.marks.map(mark => mark.id), [8]);
-  assert.equal(f.state.report.height, "1,80");
-  assert.equal(f.state.report.heightUnit, "m");
-  assert.strictEqual(f.state.report.coordinate[0], -98.2);
+
+  // Seleccionar el tipo de la segunda seña.
+  const typePickers = nodes(tree).filter(
+    (node) =>
+      node.type === "ReportOptionPicker" &&
+      node.props.label ===
+      "Tipo de seña · Obligatorio"
+  );
+
+  assert.equal(typePickers.length, 2);
+
+  typePickers[1].props.onChange("Cicatriz");
+
+  // Seleccionar la región de la segunda seña.
+  tree = f.render();
+
+  const areaPickers = nodes(tree).filter(
+    (node) =>
+      node.type === "ReportOptionPicker" &&
+      node.props.label ===
+      "Zona corporal · Obligatoria"
+  );
+
+  areaPickers[1].props.onChange("Pierna izquierda");
+
+  assert.equal(
+    f.state.report.marks[1].type,
+    "Cicatriz"
+  );
+
+  assert.equal(
+    f.state.report.marks[1].area,
+    "Pierna izquierda"
+  );
+
+  // La primera seña debe permanecer intacta.
+  assert.strictEqual(
+    f.state.report.marks[0],
+    mark
+  );
+
+  // Eliminar la primera seña.
+  find(
+    f.render(),
+    "Action",
+    "Quitar seña 1"
+  ).onPress();
+
+  assert.deepEqual(
+    f.state.report.marks.map((m) => m.id),
+    [8]
+  );
+
+  // Los demás datos se conservan.
+  assert.equal(f.state.report.height, "180");
+  assert.equal(f.state.report.build, "Media");
+  assert.equal(f.state.report.skin, "MST-05");
+
+  assert.equal(
+    f.state.report.coordinate[0],
+    -98.2
+  );
 });
+
 
 test("location preserves modes and draft, and requests map selection through the coordinator", () => {
   const f = form({ report: valid(), step: 2 });

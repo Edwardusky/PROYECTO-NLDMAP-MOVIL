@@ -1,6 +1,9 @@
 import { Action, useFormStyles } from "@/shared/components/form-controls";
 import { Image, Text, View } from "react-native";
 import {
+  skinToneLabel,
+} from "../model/report-appearance-options";
+import {
   informationModeLabel,
   isUnknownInformation,
 } from "../model/report-options";
@@ -43,7 +46,7 @@ export function ReportReviewStep(props: Props) {
             .join(" "),
         )}
 
-   
+
         {summary(
           "Edad",
           isUnknownInformation(r.ageMode)
@@ -71,10 +74,31 @@ export function ReportReviewStep(props: Props) {
         <Text accessibilityRole="header" style={s.heading}>
           Descripción
         </Text>
-        {summary("Estatura", r.height ? `${r.height} ${r.heightUnit}` : "")}
+
+        {summary(
+          "Estatura",
+          r.height
+            ? `${r.height} ${r.heightUnit}${r.heightApproximate
+              ? " (aproximada)"
+              : ""
+            }`
+            : ""
+        )}
+
         {summary("Complexión", r.build)}
-        {summary("Piel", r.skin)}
-        {summary("Cabello", r.hair)}
+
+        {summary("Tono de piel", skinToneLabel(r.skin))}
+
+        {summary(
+          "Cabello",
+          [
+            r.hairColor,
+            r.hairDescription,
+          ]
+            .filter(Boolean)
+            .join(" · ") || r.hair
+        )}
+
         {r.marks.length
           ? r.marks.map((mark, i) => (
             <Text key={mark.id} style={s.body}>
@@ -84,8 +108,26 @@ export function ReportReviewStep(props: Props) {
             </Text>
           ))
           : summary("Señas", "No indicadas")}
-        {summary("Ropa", r.clothes)}
-        {summary("Calzado", r.shoes)}
+
+        {summary(
+          "Ropa",
+          r.clothesUnknown
+            ? "Se desconoce"
+            : r.clothes
+        )}
+
+        {summary(
+          "Calzado",
+          r.shoesUnknown
+            ? "Se desconoce"
+            : r.shoes
+        )}
+
+        {summary(
+          "Descripción identificativa",
+          r.identifyingDescription ?? ""
+        )}
+
         <Action
           secondary
           label="Editar descripción"

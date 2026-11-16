@@ -31,6 +31,9 @@ const draft = () => ({
 
   reporterName: "Contacto",
   reporterEmail: "contacto@example.com",
+  clothes: "Sudadera roja",
+  shoes: "Tenis blancos",
+  identifyingDescription: "Usa lentes",
 });
 
 
@@ -269,3 +272,119 @@ test("sex is mandatory and accepts only Mujer or Hombre", () => {
     }, 0).sex
   );
 });
+
+
+test("description validates height in centimeters", () => {
+  const report = draft();
+
+  assert.deepEqual(
+    reportErrors({
+      ...report,
+      height: "180",
+      heightUnit: "cm",
+    }, 1),
+    {}
+  );
+
+  for (const height of ["29", "301", "1,80", "abc"]) {
+    assert.ok(
+      reportErrors({
+        ...report,
+        height,
+        heightUnit: "cm",
+      }, 1).height,
+      height
+    );
+  }
+});
+
+test("added marks require type and body region, not description", () => {
+  const report = draft();
+
+  const mark = {
+    id: 9,
+    type: "",
+    area: "",
+    description: "",
+  };
+
+  const errors = reportErrors({
+    ...report,
+    marks: [mark],
+  }, 1);
+
+  assert.ok(errors["marks.9.type"]);
+  assert.ok(errors["marks.9.area"]);
+
+  const corrected = reportErrors({
+    ...report,
+    marks: [{
+      ...mark,
+      type: "Cicatriz",
+      area: "Brazo derecho",
+    }],
+  }, 1);
+
+  assert.deepEqual(corrected, {});
+});
+
+test("clothes and shoes require a description or explicit unknown", () => {
+  const report = draft();
+
+  const errors = reportErrors({
+    ...report,
+    clothes: "",
+    shoes: "",
+  }, 1);
+
+  assert.ok(errors.clothes);
+  assert.ok(errors.shoes);
+
+  const unknown = reportErrors({
+    ...report,
+    clothes: "",
+    shoes: "",
+    clothesUnknown: true,
+    shoesUnknown: true,
+  }, 1);
+
+  assert.deepEqual(unknown, {});
+});
+
+test("identifying description is required", () => {
+  const report = draft();
+
+  assert.ok(
+    reportErrors({
+      ...report,
+      identifyingDescription: "  ",
+    }, 1).identifyingDescription
+  );
+
+  assert.deepEqual(
+    reportErrors({
+      ...report,
+      identifyingDescription: "Usa lentes",
+    }, 1),
+    {}
+  );
+});
+
+test("legacy height in meters migrates to centimeters", () => {
+  const report = {
+    ...draft(),
+    started: true,
+    height: "1,80",
+    heightUnit: "m",
+  };
+
+  const migrated = seedReport(report, emptyProfile);
+
+  assert.equal(migrated.height, "180");
+  assert.equal(migrated.heightUnit, "cm");
+
+  // El objeto original no se modifica.
+  assert.equal(report.height, "1,80");
+  assert.equal(report.heightUnit, "m");
+});
+

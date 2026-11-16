@@ -103,18 +103,46 @@ export default function CreateReportScreen() {
       },
     ]);
   }
+
   function removeMark(id: number) {
     update(
       "marks",
-      r.marks.filter((mark) => mark.id !== id),
+      r.marks.filter((mark) => mark.id !== id)
+    );
+
+    // No conservar los errores de una seña eliminada.
+    setErrors((current) =>
+      Object.fromEntries(
+        Object.entries(current).filter(
+          ([key]) => !key.startsWith(`marks.${id}.`)
+        )
+      )
     );
   }
-  function updateMark(id: number, key: Exclude<keyof Mark, "id">, value: string) {
+
+
+  function updateMark(
+    id: number,
+    key: Exclude<keyof Mark, "id">,
+    value: string
+  ) {
     update(
       "marks",
-      r.marks.map((mark) => mark.id === id ? { ...mark, [key]: value } : mark),
+      r.marks.map((mark) =>
+        mark.id === id
+          ? { ...mark, [key]: value }
+          : mark
+      )
     );
+
+    // Quitar el error de este campo cuando se edita.
+    setErrors((current) => {
+      const next = { ...current };
+      delete next[`marks.${id}.${key}`];
+      return next;
+    });
   }
+
   function pickLocation() {
     setEditingLocation(true);
     setPicking(true);

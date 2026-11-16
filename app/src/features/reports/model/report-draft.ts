@@ -25,14 +25,29 @@ export type Report = {
   age: string;
   sex: string;
   photo: string | null;
+
   height: string;
-  heightUnit: string;
+  heightUnit: string; // Compatibilidad con borradores anteriores.
+  heightApproximate: boolean;
+
   build: string;
   skin: string;
+
+  // hair se conserva para borradores anteriores.
   hair: string;
+  hairColor: string;
+  hairDescription: string;
+
   marks: Mark[];
+
   clothes: string;
+  clothesUnknown: boolean;
+
   shoes: string;
+  shoesUnknown: boolean;
+
+  identifyingDescription: string;
+
   dateMode: string;
   date: string;
   timeMode: string;
@@ -63,14 +78,28 @@ export const emptyReport: Report = {
   age: "",
   sex: "",
   photo: null,
+
   height: "",
   heightUnit: "cm",
+  heightApproximate: false,
+
   build: "",
   skin: "",
+
   hair: "",
+  hairColor: "",
+  hairDescription: "",
+
   marks: [],
+
   clothes: "",
+  clothesUnknown: false,
+
   shoes: "",
+  shoesUnknown: false,
+
+  identifyingDescription: "",
+
   dateMode: UNKNOWN_INFORMATION,
   date: "",
   timeMode: UNKNOWN_INFORMATION,
@@ -97,16 +126,51 @@ export const coordinateValid = (point: [number, number] | null) =>
   Math.abs(point[0]) <= 180 &&
   Math.abs(point[1]) <= 90;
 export function seedReport(report: Report, profile: Profile): Report {
+
   const ageMode = normalizeInformationMode(report.ageMode);
   const dateMode = normalizeInformationMode(report.dateMode);
   const timeMode = normalizeInformationMode(report.timeMode);
+
+  let height = report.height;
+  let heightUnit = report.heightUnit;
+
+  // Migrar una estatura antigua expresada en metros.
+  if (heightUnit === "m") {
+    if (!height.trim()) {
+      heightUnit = "cm";
+    } else {
+      const meters = Number(
+        height.replace(",", ".")
+      );
+
+      if (
+        Number.isFinite(meters) &&
+        meters > 0 &&
+        meters <= 3
+      ) {
+        height = String(Math.round(meters * 100));
+        heightUnit = "cm";
+      }
+    }
+  }
+
   if (
     ageMode !== report.ageMode ||
     dateMode !== report.dateMode ||
-    timeMode !== report.timeMode
+    timeMode !== report.timeMode ||
+    height !== report.height ||
+    heightUnit !== report.heightUnit
   ) {
-    report = { ...report, ageMode, dateMode, timeMode };
+    report = {
+      ...report,
+      ageMode,
+      dateMode,
+      timeMode,
+      height,
+      heightUnit,
+    };
   }
+
   return report.started
     ? report
     : {
@@ -186,13 +250,75 @@ export function reportErrors(
     }
   }
 
-  if (step === 1 && report.height.trim()) {
-    const value = Number(report.height.replace(",", "."));
-    const cm = report.heightUnit === "m" ? value * 100 : value;
-    if (!Number.isFinite(cm) || cm <= 0 || cm > 300)
-      errors.height =
-        "Revisa la estatura y la unidad; también puedes dejarla vacía.";
+
+  if (step === 1) {
+    // 1. Estatura opcional, exclusivamente en cm
+    // para los datos nuevos.
+    if (report.height.trim()) {
+      const raw = report.height.trim();
+
+      const cm =
+        report.heightUnit === "m"
+          ? Number(raw.replace(",", ".")) * 100
+          : Number(raw);
+
+      const formatValid =
+        report.heightUnit === "m" ||
+        /^\d{2,3}$/.test(raw);
+
+      if (
+        !Number.isFinite(cm) ||
+        !formatValid ||
+        cm < 30 ||
+        cm > 300
+      ) {
+        errors.height =
+          "Introduce una estatura entre 30 y 300 cm.";
+      }
+    }
+
+    // 2. Cada seña añadida necesita tipo y zona.
+    for (const mark of report.marks) {
+      if (!mark.type.trim()) {
+        errors[`marks.${mark.id}.type`] =
+          "Selecciona el tipo de seña.";
+      }
+
+      if (!mark.area.trim()) {
+        errors[`marks.${mark.id}.area`] =
+          "Selecciona la zona corporal.";
+      }
+    }
+
+    // 3. La ropa requiere descripción o
+    // una indicación explícita de desconocimiento.
+    if (
+      !report.clothesUnknown &&
+      !report.clothes.trim()
+    ) {
+      errors.clothes =
+        "Describe la ropa que llevaba o indica que se desconoce.";
+    }
+
+    // 4. Mismo criterio para el calzado.
+    if (
+      !report.shoesUnknown &&
+      !report.shoes.trim()
+    ) {
+      errors.shoes =
+        "Describe el calzado o indica que se desconoce.";
+    }
+
+    // 5. Descripción identificativa obligatoria.
+    if (
+      !report.identifyingDescription?.trim()
+    ) {
+      errors.identifyingDescription =
+        "Escribe una descripción que ayude a identificar a la persona.";
+    }
   }
+
+
   if (step === 2) {
     if (!coordinateValid(report.coordinate))
       errors.coordinate = "Selecciona y confirma una ubicación en el mapa.";
