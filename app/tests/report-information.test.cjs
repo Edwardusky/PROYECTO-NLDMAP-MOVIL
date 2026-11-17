@@ -25,7 +25,7 @@ const draft = () => ({
   sex: "Mujer",
 
   photo: "file:///persona.jpg",
-
+  locationPrecision: "Conocida",
   coordinate: [-98.2, 19.4],
   story: "Relato",
 
@@ -387,4 +387,120 @@ test("legacy height in meters migrates to centimeters", () => {
   assert.equal(report.height, "1,80");
   assert.equal(report.heightUnit, "m");
 });
+
+
+test("location needs an explicitly defined precision", () => {
+  const report = draft();
+
+  assert.ok(
+    reportErrors({
+      ...report,
+      locationPrecision: "",
+    }, 2).locationPrecision
+  );
+
+  assert.equal(
+    reportErrors({
+      ...report,
+      locationKind: "Última vez vista",
+      locationPrecision: "Conocida",
+    }, 2).locationPrecision,
+    undefined
+  );
+
+  assert.ok(
+    reportErrors({
+      ...report,
+      locationKind: "Ubicación inferida",
+      locationPrecision: "Conocida",
+    }, 2).locationPrecision
+  );
+
+  assert.ok(
+    reportErrors({
+      ...report,
+      locationKind: "Avistamiento",
+    }, 2).locationKind
+  );
+});
+
+test("approximate date and time are valid modes", () => {
+  const report = draft();
+
+  const errors = reportErrors({
+    ...report,
+    dateMode: "Aproximada",
+    date: "2026-09-01",
+    timeMode: "Aproximada",
+    time: "15:30",
+  }, 2);
+
+  assert.equal(errors.date, undefined);
+  assert.equal(errors.time, undefined);
+  assert.equal(errors.dateMode, undefined);
+  assert.equal(errors.timeMode, undefined);
+});
+
+test("vehicle requires one detail only when added", () => {
+  const report = draft();
+
+  assert.equal(
+    reportErrors({
+      ...report,
+      vehicle: null,
+    }, 2).vehicle,
+    undefined
+  );
+
+  assert.ok(
+    reportErrors({
+      ...report,
+      vehicle: {
+        brand: "",
+        model: "",
+        color: "",
+        plate: "",
+      },
+    }, 2).vehicle
+  );
+
+  assert.equal(
+    reportErrors({
+      ...report,
+      vehicle: {
+        brand: "",
+        model: "",
+        color: "Gris",
+        plate: "",
+      },
+    }, 2).vehicle,
+    undefined
+  );
+});
+
+test("involved person can be described without a name", () => {
+  const report = draft();
+
+  assert.ok(
+    reportErrors({
+      ...report,
+      involvedPerson: {
+        name: "",
+        description: "",
+      },
+    }, 2).involvedPerson
+  );
+
+  assert.equal(
+    reportErrors({
+      ...report,
+      involvedPerson: {
+        name: "",
+        description: "Persona vista cerca del lugar",
+      },
+    }, 2).involvedPerson,
+    undefined
+  );
+});
+
 

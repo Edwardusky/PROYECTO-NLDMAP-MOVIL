@@ -12,6 +12,18 @@ export type Mark = {
   area: string;
   description: string;
 };
+export type ReportVehicle = {
+  brand: string;
+  model: string;
+  color: string;
+  plate: string;
+};
+
+export type ReportInvolvedPerson = {
+  name: string;
+  description: string;
+};
+
 export type Report = {
   started: boolean;
   firstName: string;
@@ -53,6 +65,7 @@ export type Report = {
   timeMode: string;
   time: string;
   locationKind: string;
+  locationPrecision: string;
   coordinate: [number, number] | null;
   state: string;
   municipality: string;
@@ -61,6 +74,8 @@ export type Report = {
   story: string;
   involved: boolean;
   involvement: string;
+  vehicle: ReportVehicle | null;
+  involvedPerson: ReportInvolvedPerson | null;
   reporterName: string;
   reporterEmail: string;
   reporterPhone: string;
@@ -105,6 +120,7 @@ export const emptyReport: Report = {
   timeMode: UNKNOWN_INFORMATION,
   time: "",
   locationKind: "Última vez vista",
+  locationPrecision: "",
   coordinate: null,
   state: "",
   municipality: "",
@@ -113,6 +129,8 @@ export const emptyReport: Report = {
   story: "",
   involved: false,
   involvement: "",
+  vehicle: null,
+  involvedPerson: null,
   reporterName: "",
   reporterEmail: "",
   reporterPhone: "",
@@ -320,17 +338,117 @@ export function reportErrors(
 
 
   if (step === 2) {
-    if (!coordinateValid(report.coordinate))
-      errors.coordinate = "Selecciona y confirma una ubicación en el mapa.";
-    if (!isUnknownInformation(report.dateMode) && !validDate(report.date))
-      errors.date = "Usa una fecha válida: AAAA-MM-DD.";
+    // FECHA
+    if (!isUnknownInformation(report.dateMode)) {
+      if (
+        report.dateMode !== "Conocida" &&
+        report.dateMode !== "Aproximada"
+      ) {
+        errors.dateMode =
+          "Indica si la fecha es conocida, aproximada o desconocida.";
+      } else if (!validDate(report.date)) {
+        errors.date =
+          "Selecciona una fecha válida en el calendario.";
+      } else {
+        const today = new Date();
+        const localToday = [
+          today.getFullYear(),
+          String(today.getMonth() + 1).padStart(2, "0"),
+          String(today.getDate()).padStart(2, "0"),
+        ].join("-");
+
+        if (report.date > localToday) {
+          errors.date =
+            "La última vez que se vio a la persona no puede estar en el futuro.";
+        }
+      }
+    }
+
+    // HORA
+    if (!isUnknownInformation(report.timeMode)) {
+      if (
+        report.timeMode !== "Conocida" &&
+        report.timeMode !== "Aproximada"
+      ) {
+        errors.timeMode =
+          "Indica si la hora es conocida, aproximada o desconocida.";
+      } else if (
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(report.time)
+      ) {
+        errors.time =
+          "Selecciona una hora válida en el reloj.";
+      }
+    }
+
+    // SIGNIFICADO DEL PUNTO
     if (
-      !isUnknownInformation(report.timeMode) &&
-      !/^([01]\d|2[0-3]):[0-5]\d$/.test(report.time)
-    )
-      errors.time = "Usa una hora válida: HH:MM (24 horas).";
-    if (!report.story.trim()) errors.story = "Describe brevemente lo ocurrido.";
+      report.locationKind !== "Última vez vista" &&
+      report.locationKind !== "Ubicación inferida"
+    ) {
+      errors.locationKind =
+        "Selecciona qué representa el lugar marcado.";
+    }
+
+    // PRECISIÓN DE LA UBICACIÓN
+    if (
+      report.locationPrecision !== "Conocida" &&
+      report.locationPrecision !== "Aproximada"
+    ) {
+      errors.locationPrecision =
+        "Indica si el punto es conocido o aproximado.";
+    }
+
+    if (
+      report.locationKind === "Ubicación inferida" &&
+      report.locationPrecision === "Conocida"
+    ) {
+      errors.locationPrecision =
+        "Un lugar probable no confirmado debe marcarse como aproximado.";
+    }
+
+    // COORDENADAS
+    if (!coordinateValid(report.coordinate)) {
+      errors.coordinate =
+        "Selecciona y confirma el punto en el mapa.";
+    }
+
+    // RELATO
+    if (!report.story.trim()) {
+      errors.story =
+        "Describe lo ocurrido y la información conocida.";
+    }
+
+    // VEHÍCULO OPCIONAL
+    if (report.vehicle) {
+      const vehicle = report.vehicle;
+
+      const hasVehicleDetail = [
+        vehicle.brand,
+        vehicle.model,
+        vehicle.color,
+        vehicle.plate,
+      ].some((value) => value.trim().length > 0);
+
+      if (!hasVehicleDetail) {
+        errors.vehicle =
+          "Proporciona al menos un dato del vehículo o quita este apartado.";
+      }
+    }
+
+    // PERSONA RELACIONADA OPCIONAL
+    if (report.involvedPerson) {
+      const person = report.involvedPerson;
+
+      if (
+        !person.name.trim() &&
+        !person.description.trim()
+      ) {
+        errors.involvedPerson =
+          "Proporciona un nombre o una descripción de la persona.";
+      }
+    }
   }
+
   if (step === 3) {
     if (!report.reporterName.trim())
       errors.reporterName = "Escribe el nombre de quien reporta.";

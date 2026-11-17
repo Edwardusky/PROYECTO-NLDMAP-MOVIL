@@ -23,9 +23,9 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.edwardusky.app",
       "permissions": [
-          "android.permission.ACCESS_COARSE_LOCATION",
-          "android.permission.ACCESS_FINE_LOCATION",
-          "android.permission.CAMERA"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -71,7 +71,8 @@
             "enableSceneSupport": true
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

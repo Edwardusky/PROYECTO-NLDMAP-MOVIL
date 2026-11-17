@@ -91,6 +91,22 @@ function form({ report = emptyReport, step = 0, profile = emptyProfile, params =
           ReportSkinTonePicker: "ReportSkinTonePicker",
         };
       }
+      if (name.endsWith("report-date-time-field")) {
+        return {
+          ReportDateTimeField: "ReportDateTimeField",
+        };
+      }
+
+      if (name === "@/shared/native/native-features") {
+        return {
+          loadLocation: async () => {
+            throw new Error(
+              "La geocodificación nativa no debe ejecutarse en esta prueba."
+            );
+          },
+        };
+      }
+
       if (name === "@/shared/components/form-controls") return controls;
       if (name === "@/shared/components/local-photo-picker") return { LocalPhotoPicker: "LocalPhotoPicker" };
       if (name.endsWith("profile-context")) return { useProfile: () => ({ profile }) };
@@ -144,7 +160,7 @@ const valid = () => ({
   sex: "Mujer",
 
   photo: "file:///persona.jpg",
-
+  locationPrecision: "Conocida",
   coordinate: [-98.2, 19.4],
   story: "Relato",
 
@@ -466,8 +482,6 @@ test("identification requires Mujer or Hombre", () => {
   assert.equal(f.state.report.sex, "Mujer");
 });
 
-
-
 test("description uses mobile selectors and preserves physical data and marks", () => {
   const mark = {
     id: 7,
@@ -621,27 +635,148 @@ test("description uses mobile selectors and preserves physical data and marks", 
   );
 });
 
+test("location captures dates, point meaning, vehicle and person separately", () => {
+  const f = form({
+    report: valid(),
+    step: 2,
+  });
 
-test("location preserves modes and draft, and requests map selection through the coordinator", () => {
-  const f = form({ report: valid(), step: 2 });
   let tree = f.render();
-  for (const label of ["Fecha de última vez vista", "Hora de última vez vista"]) {
-    assert.equal(find(tree, "Choices", label).value, "Se desconoce");
-  }
-  find(tree, "Choices", "Fecha de última vez vista").onChange("Conocida");
+
+  // Por defecto se pueden desconocer fecha y hora.
+  assert.equal(
+    find(
+      tree,
+      "Choices",
+      "Fecha de última vez vista"
+    ).value,
+    "Se desconoce"
+  );
+
+  assert.equal(
+    find(
+      tree,
+      "Choices",
+      "Hora de última vez vista"
+    ).value,
+    "Se desconoce"
+  );
+
+  // Capturar una fecha aproximada.
+  find(
+    tree,
+    "Choices",
+    "Fecha de última vez vista"
+  ).onChange("Aproximada");
+
   tree = f.render();
-  find(tree, "Field", "Fecha * · AAAA-MM-DD").onChangeText("2026-09-01");
-  find(tree, "Choices", "¿Tienes información de vehículos o personas involucradas?").onChange("Sí");
-  tree = f.render();
-  find(tree, "Field", "Información que conoces · Opcional (personas, placas, modelo)").onChangeText("Vehículo");
+
+  find(
+    tree,
+    "ReportDateTimeField",
+    "Seleccionar fecha"
+  ).onChange("2026-09-01");
+
+  assert.equal(
+    f.state.report.dateMode,
+    "Aproximada"
+  );
+
+  assert.equal(
+    f.state.report.date,
+    "2026-09-01"
+  );
+
+  // Capturar una hora conocida.
+  find(
+    f.render(),
+    "Choices",
+    "Hora de última vez vista"
+  ).onChange("Conocida");
+
+  find(
+    f.render(),
+    "ReportDateTimeField",
+    "Seleccionar hora"
+  ).onChange("15:30");
+
+  assert.equal(f.state.report.time, "15:30");
+
+  // Indicar que el lugar es probable.
+  find(
+    f.render(),
+    "Choices",
+    "¿Qué representa el lugar marcado? · Obligatorio"
+  ).onChange("Lugar probable (no confirmado)");
+
+  assert.equal(
+    f.state.report.locationKind,
+    "Ubicación inferida"
+  );
+
+  assert.equal(
+    f.state.report.locationPrecision,
+    "Aproximada"
+  );
+
+  // Agregar vehículo independientemente.
+  find(
+    f.render(),
+    "Choices",
+    "¿Deseas agregar un vehículo? · Opcional"
+  ).onChange("Agregar vehículo");
+
+  find(
+    f.render(),
+    "Field",
+    "Color · Opcional"
+  ).onChangeText("Azul");
+
+  assert.equal(
+    f.state.report.vehicle.color,
+    "Azul"
+  );
+
+  // Agregar persona independientemente.
+  find(
+    f.render(),
+    "Choices",
+    "¿Deseas agregar una persona? · Opcional"
+  ).onChange("Agregar persona");
+
+  find(
+    f.render(),
+    "Field",
+    "Descripción · Opcional"
+  ).onChangeText("Persona con chamarra negra");
+
+  assert.equal(
+    f.state.report.involvedPerson.description,
+    "Persona con chamarra negra"
+  );
+
+  // Volver al mapa sin perder los datos.
   const before = f.state.report;
-  find(f.render(), "Action", "Corregir ubicación en el mapa").onPress();
+
+  find(
+    f.render(),
+    "Action",
+    "Corregir ubicación en el mapa"
+  ).onPress();
+
   assert.equal(f.state.picking, true);
   assert.equal(f.state.editingLocation, true);
-  assert.deepEqual(f.navigation, [["navigate", "/"]]);
+
+  assert.deepEqual(
+    f.navigation,
+    [["navigate", "/"]]
+  );
+
   assert.equal(f.state.step, 2);
   assert.strictEqual(f.state.report, before);
 });
+
+
 
 test("initialization accepts valid coordinate params once and preserves edited contact until explicit profile copy", () => {
   const profile = { ...emptyProfile, firstName: "Perfil", email: "perfil@example.com" };
@@ -677,7 +812,7 @@ test("review includes all captured data and photo, and each edit action returns 
   const f = form({ report, step: 4 });
   const tree = f.render();
   const content = text(tree);
-  for (const value of ["Persona García López", "28 años", "Mujer", "180 cm", "Delgada", "Morena", "Negro", "Camisa", "Botas", "Tatuaje", "Brazo", "Estrella", "2026-09-01", "12:30", "Ubicación inferida", "Elegida en el mapa", "Tlaxcala", "Apizaco", "Centro", "Parque", "Relato", "Vehículo azul", "Contacto", "contacto@example.com", "1234567890", "Familiar", "Domicilio", "Red social", "no envía ni publica datos", "no está conectado al RNPDNO"]) {
+  for (const value of ["Persona García López", "28 años", "Mujer", "180 cm", "Delgada", "Morena", "Negro", "Camisa", "Botas", "Tatuaje", "Brazo", "Estrella", "2026-09-01", "12:30", "Lugar probable (no confirmado)", "Elegida en el mapa", "Tlaxcala", "Apizaco", "Centro", "Parque", "Relato", "Vehículo azul", "Contacto", "contacto@example.com", "1234567890", "Familiar", "Domicilio", "Red social", "no envía ni publica datos", "no está conectado al RNPDNO"]) {
     assert.ok(content.includes(value), value);
   }
   assert.equal(find(tree, "Image").source.uri, report.photo);

@@ -150,7 +150,18 @@ export function ReportReviewStep(props: Props) {
             ? informationModeLabel(r.timeMode)
             : `${r.time} · ${r.timeMode}`,
         )}
-        {summary("Tipo de ubicación", r.locationKind)}
+        {summary(
+          "Tipo de ubicación",
+          r.locationKind === "Ubicación inferida"
+            ? "Lugar probable (no confirmado)"
+            : r.locationKind === "Última vez vista"
+              ? "Último lugar donde fue vista"
+              : r.locationKind
+        )}
+        {summary(
+          "Precisión del punto",
+          r.locationPrecision ?? ""
+        )}
         {summary("Ubicación", coordinateText)}
         {summary("Estado", r.state)}
         {summary("Municipio", r.municipality)}
@@ -158,9 +169,39 @@ export function ReportReviewStep(props: Props) {
         {summary("Referencia", r.reference)}
         {summary("Relato", r.story)}
         {summary(
-          "Personas o vehículos involucrados",
-          r.involved ? r.involvement : "No / No se sabe",
+          "Vehículo relacionado",
+          r.vehicle
+            ? [
+              r.vehicle.brand,
+              r.vehicle.model,
+              r.vehicle.color,
+              r.vehicle.plate
+                ? `Placas: ${r.vehicle.plate}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")
+            : "No agregado"
         )}
+        {summary(
+          "Persona posiblemente relacionada",
+          r.involvedPerson
+            ? [
+              r.involvedPerson.name,
+              r.involvedPerson.description,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+            : "No agregada"
+        )}
+
+        {r.involved && !!r.involvement?.trim() && (
+          summary(
+            "Información anterior pendiente de clasificar",
+            r.involvement
+          )
+        )}
+
         <Action
           secondary
           label="Editar hechos y ubicación"
