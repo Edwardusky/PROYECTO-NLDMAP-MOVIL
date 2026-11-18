@@ -13,8 +13,8 @@ const valid = () => ({
   paternalSurname: "Hernández",
   maternalSurname: "",
   email: "persona@example.com",
-  password: "prueba",
-  confirmPassword: "prueba",
+  password: "ClaveSegura2026!",
+  confirmPassword: "ClaveSegura2026!",
 });
 
 test("el registro acepta un apellido materno vacío", () => {
@@ -132,20 +132,33 @@ test("el acceso no exige campos de registro", () => {
   );
 });
 
-test("se mantienen las reglas actuales de contraseña", () => {
-  for (const password of ["x", " ", "clave"]) {
-    const values = {
-      ...valid(),
-      password,
-      confirmPassword: password,
-    };
 
-    assert.deepEqual(
-      validateAuth(values, true),
-      {},
-    );
-  }
+test("el registro exige al menos 12 caracteres", () => {
+  const values = {
+    ...valid(),
+    password: "clave",
+    confirmPassword: "clave",
+  };
+
+  assert.equal(
+    validateAuth(values, true).password,
+    "La contraseña debe tener al menos 12 caracteres."
+  );
 });
+
+test("el registro exige complejidad de contraseña", () => {
+  const values = {
+    ...valid(),
+    password: "claveseguralarga",
+    confirmPassword: "claveseguralarga",
+  };
+
+  assert.equal(
+    validateAuth(values, true).password,
+    "Incluye mayúscula, minúscula, número y símbolo."
+  );
+});
+
 
 test("la validación no modifica los datos originales", () => {
   const values = valid();

@@ -24,9 +24,24 @@ export function validateAuth(
     errors.email = "Escribe un correo válido.";
   }
 
+
   if (!values.password) {
     errors.password = "Escribe tu contraseña.";
+  } else if (registering) {
+    if (values.password.length < 12) {
+      errors.password =
+        "La contraseña debe tener al menos 12 caracteres.";
+    } else if (
+      !/[A-Z]/.test(values.password) ||
+      !/[a-z]/.test(values.password) ||
+      !/[0-9]/.test(values.password) ||
+      !/[^A-Za-z0-9]/.test(values.password)
+    ) {
+      errors.password =
+        "Incluye mayúscula, minúscula, número y símbolo.";
+    }
   }
+
 
   if (registering) {
     if (!values.firstName.trim()) {

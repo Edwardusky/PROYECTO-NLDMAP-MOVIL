@@ -1,8 +1,11 @@
 import type { Palette } from "@/shared/constants/palette";
 import { useAppTheme } from "@/shared/theme/app-theme-context";
 import { useHeaderHeight } from "expo-router/react-navigation";
-import { Link, useFocusEffect } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import {
+  Link,
+  router,
+  useFocusEffect,
+} from "expo-router"; import { useCallback, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -22,6 +25,7 @@ import {
   type Values,
   type Errors,
 } from "../model/auth-validation";
+import { registrarCuenta } from "../api/auth-api";
 
 export { validateAuth } from "../model/auth-validation";
 
@@ -72,6 +76,8 @@ export default function AuthForm({
   const [notice, setNotice] = useState<string | null>(
     null,
   );
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const [visible, setVisible] = useState<
     Record<PasswordField, boolean>
@@ -107,14 +113,20 @@ export default function AuthForm({
     ),
   );
 
-  function submit() {
-    const nextErrors = validateAuth(values, registering);
+
+  async function submit() {
+    if (submittingRef.current) return;
+
+    const nextErrors = validateAuth(
+      values,
+      registering
+    );
 
     setErrors(nextErrors);
     setNotice(null);
 
     const firstInvalid = fields.find(
-      (field) => nextErrors[field],
+      (field) => nextErrors[field]
     );
 
     if (firstInvalid) {
@@ -124,20 +136,54 @@ export default function AuthForm({
 
     Keyboard.dismiss();
 
-    setValues((current) => ({
-      ...current,
-      password: "",
-      confirmPassword: "",
-    }));
+    // El login se conectará en el paso 3.
+    if (!registering) {
+      setNotice(
+        "El inicio de sesión se conectará en el siguiente paso."
+      );
+      return;
+    }
 
-    setVisible({
-      password: false,
-      confirmPassword: false,
-    });
+    const displayName = [
+      values.firstName,
+      values.paternalSurname,
+      values.maternalSurname,
+    ]
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(" ");
 
-    // Sin integración con API: no se crea una cuenta real.
-    setNotice("Función no disponible");
+    submittingRef.current = true;
+    setSubmitting(true);
+
+    try {
+      await registrarCuenta({
+        displayName,
+        email: values.email,
+        password: values.password,
+      });
+
+      // No conservar contraseñas en el formulario.
+      setValues((current) => ({
+        ...current,
+        password: "",
+        confirmPassword: "",
+      }));
+
+      // El registro no inicia sesión automáticamente.
+      router.replace("/login");
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error al registrar la cuenta."
+      );
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+    }
   }
+
 
   function pendingOAuth() {
     Keyboard.dismiss();
@@ -221,9 +267,9 @@ export default function AuthForm({
                   {registering &&
                     field === "password" && (
                       <Text style={styles.body}>
-                        En esta demostración se comprueba
-                        que la contraseña no esté vacía
-                        y coincida con su confirmación.
+                        La contraseña debe tener al menos
+                        12 caracteres e incluir mayúscula,
+                        minúscula, número y símbolo.
                       </Text>
                     )}
 
@@ -264,7 +310,7 @@ export default function AuthForm({
                     }
                     onSubmitEditing={() => {
                       if (isLast) {
-                        submit();
+                        void submit();
                       } else {
                         inputs.current[
                           fields[index + 1]
@@ -311,20 +357,31 @@ export default function AuthForm({
               );
             })}
 
+
             <Pressable
               accessibilityRole="button"
-              onPress={submit}
+              accessibilityState={{
+                disabled: submitting,
+                busy: submitting,
+              }}
+              disabled={submitting}
+              onPress={() => {
+                void submit();
+              }}
               style={({ pressed }) => [
                 styles.button,
-                pressed && styles.pressed,
+                (pressed || submitting) && styles.pressed,
               ]}
             >
               <Text style={styles.buttonText}>
-                {registering
-                  ? "Crear cuenta"
-                  : "Iniciar sesión"}
+                {submitting
+                  ? "Creando cuenta..."
+                  : registering
+                    ? "Crear cuenta"
+                    : "Iniciar sesión"}
               </Text>
             </Pressable>
+
 
             {notice && (
               <Text
