@@ -34,18 +34,27 @@ export function createReportFields({
       | "email-address"
       | "phone-pad" = "default",
   ) {
+
     return (
       <Field
         key={key}
+        fieldId={key}
         label={label}
         value={r[key]}
-        onChangeText={(value) => update(key, value)}
+        onChangeText={(value) =>
+          update(key, value)
+        }
         error={errors[key]}
         multiline={multiline}
         keyboardType={keyboardType}
-        autoCapitalize={keyboardType === "email-address" ? "none" : "sentences"}
+        autoCapitalize={
+          keyboardType === "email-address"
+            ? "none"
+            : "sentences"
+        }
       />
     );
+
   }
   function choose(key: TextKey, label: string, options: readonly string[]) {
     return (

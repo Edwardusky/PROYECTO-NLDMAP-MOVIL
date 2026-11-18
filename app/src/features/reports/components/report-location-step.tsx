@@ -6,6 +6,7 @@ import {
   Action,
   Choices,
   Field,
+  FormErrorTarget,
   useFormStyles,
 } from "@/shared/components/form-controls";
 
@@ -212,6 +213,7 @@ export function ReportLocationStep({
 
 
         <Choices
+          fieldId="dateMode"
           label="Fecha de última vez vista"
           options={dateTimeModes}
           value={informationModeLabel(r.dateMode)}
@@ -223,15 +225,19 @@ export function ReportLocationStep({
           }
         />
 
+
         {!isUnknownInformation(r.dateMode) && (
-          <ReportDateTimeField
-            label="Seleccionar fecha"
-            mode="date"
-            value={r.date}
-            onChange={(value) => update("date", value)}
-            error={errors.date}
-          />
+          <FormErrorTarget id="date">
+            <ReportDateTimeField
+              label="Seleccionar fecha"
+              mode="date"
+              value={r.date}
+              onChange={(value) => update("date", value)}
+              error={errors.date}
+            />
+          </FormErrorTarget>
         )}
+
 
         {errors.dateMode && (
           <Text accessibilityRole="alert" style={s.error}>
@@ -240,6 +246,7 @@ export function ReportLocationStep({
         )}
 
         <Choices
+          fieldId="timeMode"
           label="Hora de última vez vista"
           options={dateTimeModes}
           value={informationModeLabel(r.timeMode)}
@@ -251,15 +258,19 @@ export function ReportLocationStep({
           }
         />
 
+
         {!isUnknownInformation(r.timeMode) && (
-          <ReportDateTimeField
-            label="Seleccionar hora"
-            mode="time"
-            value={r.time}
-            onChange={(value) => update("time", value)}
-            error={errors.time}
-          />
+          <FormErrorTarget id="time">
+            <ReportDateTimeField
+              label="Seleccionar hora"
+              mode="time"
+              value={r.time}
+              onChange={(value) => update("time", value)}
+              error={errors.time}
+            />
+          </FormErrorTarget>
         )}
+
 
         {errors.timeMode && (
           <Text accessibilityRole="alert" style={s.error}>
@@ -269,12 +280,12 @@ export function ReportLocationStep({
 
         {(r.dateMode === "Aproximada" ||
           r.timeMode === "Aproximada") && (
-          <Text style={s.body}>
-            Las fechas y horas aproximadas son
-            estimaciones; no se presentarán como
-            información confirmada.
-          </Text>
-        )}
+            <Text style={s.body}>
+              Las fechas y horas aproximadas son
+              estimaciones; no se presentarán como
+              información confirmada.
+            </Text>
+          )}
       </View>
 
       {/* LUGAR */}
@@ -288,6 +299,7 @@ export function ReportLocationStep({
         </Text>
 
         <Choices
+          fieldId="locationKind"
           label="¿Qué representa el lugar marcado? · Obligatorio"
           options={[
             "Último lugar donde fue vista",
@@ -328,6 +340,7 @@ export function ReportLocationStep({
         )}
 
         <Choices
+          fieldId="locationPrecision"
           label="Precisión del punto · Obligatoria"
           options={["Conocida", "Aproximada"]}
           value={r.locationPrecision ?? ""}
@@ -348,27 +361,34 @@ export function ReportLocationStep({
           </Text>
         )}
 
-        <Text selectable style={s.body}>
-          {r.coordinate
-            ? `Punto confirmado: ${r.coordinate[1].toFixed(5)}, ${r.coordinate[0].toFixed(5)}`
-            : "Todavía no has confirmado un punto."}
-        </Text>
 
-        {errors.coordinate && (
-          <Text accessibilityRole="alert" style={s.error}>
-            {errors.coordinate}
+        <FormErrorTarget id="coordinate">
+          <Text selectable style={s.body}>
+            {r.coordinate
+              ? `Punto confirmado: ${r.coordinate[1].toFixed(5)}, ${r.coordinate[0].toFixed(5)}`
+              : "Todavía no has confirmado un punto."}
           </Text>
-        )}
 
-        <Action
-          secondary
-          label={
-            r.coordinate
-              ? "Corregir ubicación en el mapa"
-              : "Seleccionar punto en el mapa"
-          }
-          onPress={onPickLocation}
-        />
+          {errors.coordinate && (
+            <Text
+              accessibilityRole="alert"
+              style={s.error}
+            >
+              {errors.coordinate}
+            </Text>
+          )}
+
+          <Action
+            secondary
+            label={
+              r.coordinate
+                ? "Corregir ubicación en el mapa"
+                : "Seleccionar punto en el mapa"
+            }
+            onPress={onPickLocation}
+          />
+        </FormErrorTarget>
+
       </View>
 
       {/* DIRECCIÓN */}
@@ -486,6 +506,7 @@ export function ReportLocationStep({
         </Text>
 
         <Field
+          fieldId="story"
           label="Descripción de lo ocurrido · Obligatoria"
           placeholder={
             "Ej. Salió de su domicilio por la mañana y se perdió comunicación con ella durante el trayecto..."
@@ -514,6 +535,7 @@ export function ReportLocationStep({
         </Text>
 
         <Choices
+          fieldId="vehicle"
           label="¿Deseas agregar un vehículo? · Opcional"
           options={["No agregar", "Agregar vehículo"]}
           value={
@@ -530,6 +552,14 @@ export function ReportLocationStep({
             )
           }
         />
+        {!!errors.vehicle && (
+          <Text
+            accessibilityRole="alert"
+            style={s.error}
+          >
+            {errors.vehicle}
+          </Text>
+        )}
 
         {r.vehicle && (
           <>
@@ -577,14 +607,7 @@ export function ReportLocationStep({
               }
             />
 
-            {!!errors.vehicle && (
-              <Text
-                accessibilityRole="alert"
-                style={s.error}
-              >
-                {errors.vehicle}
-              </Text>
-            )}
+
           </>
         )}
       </View>
@@ -604,6 +627,7 @@ export function ReportLocationStep({
         </Text>
 
         <Choices
+          fieldId="involvedPerson"
           label="¿Deseas agregar una persona? · Opcional"
           options={["No agregar", "Agregar persona"]}
           value={
@@ -620,6 +644,15 @@ export function ReportLocationStep({
             )
           }
         />
+
+        {!!errors.involvedPerson && (
+          <Text
+            accessibilityRole="alert"
+            style={s.error}
+          >
+            {errors.involvedPerson}
+          </Text>
+        )}
 
         {r.involvedPerson && (
           <>
@@ -646,14 +679,7 @@ export function ReportLocationStep({
               }
             />
 
-            {!!errors.involvedPerson && (
-              <Text
-                accessibilityRole="alert"
-                style={s.error}
-              >
-                {errors.involvedPerson}
-              </Text>
-            )}
+
           </>
         )}
 

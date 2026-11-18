@@ -1,9 +1,9 @@
-
 import { Text, View } from "react-native";
 
 import {
   Choices,
   Field,
+  FormErrorTarget,
   useFormStyles,
 } from "@/shared/components/form-controls";
 
@@ -35,6 +35,7 @@ export function ReportIdentificationStep({
         </Text>
 
         <Field
+          fieldId="firstName"
           label="Nombre(s) · Obligatorio"
           placeholder="Ej. María Fernanda"
           value={r.firstName}
@@ -47,6 +48,7 @@ export function ReportIdentificationStep({
         />
 
         <Field
+          fieldId="paternalSurname"
           label="Apellido paterno · Obligatorio"
           placeholder="Ej. García"
           value={r.paternalSurname}
@@ -59,6 +61,7 @@ export function ReportIdentificationStep({
         />
 
         <Field
+          fieldId="maternalSurname"
           label="Apellido materno · Obligatorio"
           placeholder="Ej. López"
           value={r.maternalSurname}
@@ -103,6 +106,7 @@ export function ReportIdentificationStep({
 
         {!isUnknownInformation(r.ageMode) && (
           <Field
+            fieldId="age"
             label={
               r.ageMode === "Aproximada"
                 ? "Edad aproximada en años · Obligatoria"
@@ -120,6 +124,7 @@ export function ReportIdentificationStep({
 
 
         <Choices
+          fieldId="sex"
           label="Sexo · Obligatorio"
           options={[
             "Mujer",
@@ -157,16 +162,20 @@ export function ReportIdentificationStep({
           Tamaño máximo: 5 MB.
         </Text>
 
-        <LocalPhotoPicker
-          label="Fotografía de la persona"
-          uri={r.photo}
-          onChange={(photo) =>
-            onUpdate("photo", photo)
-          }
-          allowCapture
-          required
-          validationError={errors.photo}
-        />
+
+        <FormErrorTarget id="photo">
+          <LocalPhotoPicker
+            label="Fotografía de la persona"
+            uri={r.photo}
+            onChange={(photo) =>
+              onUpdate("photo", photo)
+            }
+            allowCapture
+            required
+            validationError={errors.photo}
+          />
+        </FormErrorTarget>
+
       </View>
     </>
   );

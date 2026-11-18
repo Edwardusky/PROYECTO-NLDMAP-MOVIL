@@ -214,6 +214,7 @@ export function FormScreen({
   const headerHeight = useHeaderHeight();
 
   const scrollRef = useRef<ScrollView>(null);
+  const viewportRef = useRef<View>(null);
   const scrollOffset = useRef(0);
 
   const targets = useRef(
@@ -231,6 +232,7 @@ export function FormScreen({
     []
   );
 
+
   useEffect(() => {
     if (!errorRequest) return;
 
@@ -238,20 +240,24 @@ export function FormScreen({
 
     const frame = requestAnimationFrame(() => {
       const scroll = scrollRef.current;
+      const viewport = viewportRef.current;
+
       const target = targets.current.get(
         errorRequest.id
       );
 
-      if (!scroll || !target) return;
+      if (!scroll || !viewport || !target) {
+        return;
+      }
 
-      scroll.measureInWindow(
-        (_scrollX, scrollTop) => {
+      viewport.measureInWindow(
+        (_viewportX: number, viewportTop: number) => {
           target.measureInWindow(
-            (_targetX, targetTop) => {
+            (_targetX: number, targetTop: number) => {
               if (cancelled) return;
 
               if (
-                !Number.isFinite(scrollTop) ||
+                !Number.isFinite(viewportTop) ||
                 !Number.isFinite(targetTop)
               ) {
                 return;
@@ -261,7 +267,7 @@ export function FormScreen({
                 0,
                 scrollOffset.current +
                 targetTop -
-                scrollTop -
+                viewportTop -
                 16
               );
 
@@ -280,6 +286,7 @@ export function FormScreen({
       cancelAnimationFrame(frame);
     };
   }, [errorRequest]);
+
 
   return (
     <FormTargetsContext.Provider value={registerTarget}>
@@ -301,6 +308,7 @@ export function FormScreen({
           </View>
         )}
 
+
         <KeyboardAvoidingView
           style={s.screen}
           behavior={
@@ -310,20 +318,27 @@ export function FormScreen({
           }
           keyboardVerticalOffset={headerHeight}
         >
-          <ScrollView
-            ref={scrollRef}
-            contentContainerStyle={s.content}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            scrollEventThrottle={16}
-            onScroll={(event) => {
-              scrollOffset.current =
-                event.nativeEvent.contentOffset.y;
-            }}
+          <View
+            ref={viewportRef}
+            collapsable={false}
+            style={{ flex: 1 }}
           >
-            {children}
-          </ScrollView>
+            <ScrollView
+              ref={scrollRef}
+              contentContainerStyle={s.content}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              scrollEventThrottle={16}
+              onScroll={(event) => {
+                scrollOffset.current =
+                  event.nativeEvent.contentOffset.y;
+              }}
+            >
+              {children}
+            </ScrollView>
+          </View>
         </KeyboardAvoidingView>
+
       </SafeAreaView>
     </FormTargetsContext.Provider>
   );

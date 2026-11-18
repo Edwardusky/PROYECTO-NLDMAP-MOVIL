@@ -5,6 +5,7 @@ import {
   Action,
   Choices,
   Field,
+  FormErrorTarget,
   useFormStyles,
 } from "@/shared/components/form-controls";
 
@@ -18,6 +19,7 @@ import {
 } from "../model/report-appearance-options";
 
 import type { ReportStepProps } from "./report-step-fields";
+
 import { ReportOptionPicker } from "./report-option-picker";
 import { ReportSkinTonePicker } from "./report-skin-tone-picker";
 
@@ -52,8 +54,9 @@ export function ReportDescriptionStep({
           Estatura y complexión
         </Text>
 
-    
+
         <Field
+          fieldId="height"
           label="Estatura en centímetros (cm) · Opcional"
           placeholder="Ej. 170"
           keyboardType="number-pad"
@@ -213,35 +216,43 @@ export function ReportDescriptionStep({
                 Seña {index + 1}
               </Text>
 
-              <ReportOptionPicker
-                label="Tipo de seña · Obligatorio"
-                value={mark.type}
-                options={MARK_TYPE_OPTIONS}
-                optional={false}
-                error={typeError}
-                onChange={(value) =>
-                  onUpdateMark(
-                    mark.id,
-                    "type",
-                    value
-                  )
-                }
-              />
 
-              <ReportOptionPicker
-                label="Zona corporal · Obligatoria"
-                value={mark.area}
-                options={BODY_REGION_OPTIONS}
-                optional={false}
-                error={areaError}
-                onChange={(value) =>
-                  onUpdateMark(
-                    mark.id,
-                    "area",
-                    value
-                  )
-                }
-              />
+              <FormErrorTarget id={`marks.${mark.id}.type`}>
+                <ReportOptionPicker
+                  label="Tipo de seña · Obligatorio"
+                  value={mark.type}
+                  options={MARK_TYPE_OPTIONS}
+                  optional={false}
+                  error={typeError}
+                  onChange={(value) =>
+                    onUpdateMark(
+                      mark.id,
+                      "type",
+                      value
+                    )
+                  }
+                />
+              </FormErrorTarget>
+
+
+
+              <FormErrorTarget id={`marks.${mark.id}.area`}>
+                <ReportOptionPicker
+                  label="Zona corporal · Obligatoria"
+                  value={mark.area}
+                  options={BODY_REGION_OPTIONS}
+                  optional={false}
+                  error={areaError}
+                  onChange={(value) =>
+                    onUpdateMark(
+                      mark.id,
+                      "area",
+                      value
+                    )
+                  }
+                />
+              </FormErrorTarget>
+
 
               <Field
                 label="Descripción de la seña · Opcional"
@@ -319,6 +330,7 @@ export function ReportDescriptionStep({
         {!r.clothesUnknown && (
           <>
             <Field
+              fieldId="clothes"
               label="Ropa que llevaba · Obligatoria"
               placeholder={
                 "Ej. Sudadera roja, pantalón de mezclilla azul"
@@ -359,6 +371,7 @@ export function ReportDescriptionStep({
         {!r.shoesUnknown && (
           <>
             <Field
+              fieldId="shoes"
               label="Calzado · Obligatorio"
               placeholder={
                 "Ej. Tenis blancos con detalles negros"
@@ -398,6 +411,7 @@ export function ReportDescriptionStep({
         </Text>
 
         <Field
+          fieldId="identifyingDescription"
           label="Descripción identificativa · Obligatoria"
           placeholder={
             "Ej. Usa lentes de armazón negro, tiene barba corta y camina con una ligera cojera"
