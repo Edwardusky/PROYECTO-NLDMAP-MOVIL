@@ -20,6 +20,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { Palette } from "@/shared/constants/palette";
 import { useAppTheme } from "@/shared/theme/app-theme-context";
+import {
+  useAuthSession,
+} from "@/features/auth/state/auth-session-context";
 
 type AccountRoute =
   | "/login"
@@ -43,6 +46,12 @@ export function AccountDrawer({
   onNavigate,
 }: Props) {
   const { colors: c } = useAppTheme();
+  const { user, logout } = useAuthSession();
+
+  const [
+    accountExpanded,
+    setAccountExpanded,
+  ] = useState(false);
 
   const styles = useMemo(
     () => createStyles(c),
@@ -195,32 +204,129 @@ export function AccountDrawer({
               </Pressable>
             </View>
 
-            {/* Opciones */}
+
+            {/* Opciones de cuenta */}
             <View style={styles.options}>
-              <MenuOption
-                icon="log-in-outline"
-                label="Iniciar sesión"
-                onPress={() =>
-                  navigateAfterClose("/login")
-                }
-              />
+              {user ? (
+                <>
+                  {/* Identidad autenticada */}
+                  <View style={styles.identity}>
+                    <Ionicons
+                      name="person-circle-outline"
+                      size={44}
+                      color={c.text}
+                      accessible={false}
+                    />
 
-              <MenuOption
-                icon="person-add-outline"
-                label="Registrarse"
-                onPress={() =>
-                  navigateAfterClose("/register")
-                }
-              />
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text style={styles.identityCaption}>
+                        Sesión iniciada
+                      </Text>
 
-              <MenuOption
-                icon="person-circle-outline"
-                label="Mi perfil"
-                onPress={() =>
-                  navigateAfterClose("/profile")
-                }
-              />
+                      <Text
+                        style={styles.identityName}
+                        numberOfLines={2}
+                      >
+                        {user.displayName}
+                      </Text>
+
+                      <Text
+                        style={styles.identityEmail}
+                        numberOfLines={1}
+                      >
+                        {user.email ?? "Sin correo"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Desplegable */}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Mi cuenta"
+                    accessibilityState={{
+                      expanded: accountExpanded,
+                    }}
+                    onPress={() =>
+                      setAccountExpanded((current) => !current)
+                    }
+                    style={styles.accountToggle}
+                  >
+                    <Ionicons
+                      name="person-outline"
+                      size={23}
+                      color={c.text}
+                      accessible={false}
+                    />
+
+                    <Text style={styles.accountToggleText}>
+                      Mi cuenta
+                    </Text>
+
+                    <Ionicons
+                      name={
+                        accountExpanded
+                          ? "chevron-up-outline"
+                          : "chevron-down-outline"
+                      }
+                      size={20}
+                      color={c.text}
+                      accessible={false}
+                    />
+                  </Pressable>
+
+                  {accountExpanded && (
+                    <View style={styles.submenu}>
+                      <MenuOption
+                        icon="person-circle-outline"
+                        label="Mi perfil"
+                        onPress={() =>
+                          navigateAfterClose("/profile")
+                        }
+                      />
+
+                      <MenuOption
+                        icon="albums-outline"
+                        label="Mis aportaciones (próximamente)"
+                        onPress={() => { }}
+                        disabled
+                      />
+                    </View>
+                  )}
+
+                  <MenuOption
+                    icon="log-out-outline"
+                    label="Cerrar sesión"
+                    onPress={() => {
+                      logout();
+                      onClose();
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <Text style={styles.identityCaption}>
+                    Accede a tu cuenta de NLDMAP
+                  </Text>
+
+                  <MenuOption
+                    icon="log-in-outline"
+                    label="Iniciar sesión"
+                    onPress={() =>
+                      navigateAfterClose("/login")
+                    }
+                  />
+
+                  <MenuOption
+                    icon="person-add-outline"
+                    label="Registrarse"
+                    onPress={() =>
+                      navigateAfterClose("/register")
+                    }
+                  />
+                </>
+              )}
             </View>
+
 
             <Text style={styles.caption}>
               NLDMAP · 1.0.0
@@ -232,14 +338,19 @@ export function AccountDrawer({
   );
 }
 
+
 function MenuOption({
   icon,
   label,
   onPress,
+  disabled = false,
 }: {
-  icon: React.ComponentProps<typeof Ionicons>["name"];
+  icon: React.ComponentProps<
+    typeof Ionicons
+  >["name"];
   label: string;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   const { colors: c } = useAppTheme();
 
@@ -247,6 +358,8 @@ function MenuOption({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         {
@@ -257,6 +370,7 @@ function MenuOption({
           gap: 12,
           borderRadius: 12,
           backgroundColor: c.surfaceAlt,
+          opacity: disabled ? 0.45 : 1,
         },
         pressed && { opacity: 0.7 },
       ]}
@@ -270,6 +384,7 @@ function MenuOption({
 
       <Text
         style={{
+          flex: 1,
           fontSize: 16,
           fontWeight: "600",
           color: c.text,
@@ -280,6 +395,7 @@ function MenuOption({
     </Pressable>
   );
 }
+
 
 function createStyles(c: Palette) {
   return StyleSheet.create({
@@ -328,6 +444,55 @@ function createStyles(c: Palette) {
     options: {
       gap: 10,
     },
+
+
+    identity: {
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: c.surfaceAlt,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+
+    identityCaption: {
+      fontSize: 13,
+      color: c.muted,
+    },
+
+    identityName: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: c.text,
+    },
+
+    identityEmail: {
+      fontSize: 12,
+      color: c.muted,
+    },
+
+    accountToggle: {
+      minHeight: 52,
+      paddingHorizontal: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      borderRadius: 12,
+      backgroundColor: c.surfaceAlt,
+    },
+
+    accountToggleText: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: "700",
+      color: c.text,
+    },
+
+    submenu: {
+      gap: 8,
+      marginLeft: 14,
+    },
+
 
     caption: {
       marginTop: "auto",

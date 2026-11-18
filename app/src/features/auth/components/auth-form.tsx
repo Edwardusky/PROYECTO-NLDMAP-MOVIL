@@ -20,13 +20,17 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
+  useAuthSession,
+} from "@/features/auth/state/auth-session-context";
+import {
   validateAuth,
   type Field,
   type Values,
   type Errors,
 } from "../model/auth-validation";
-import { registrarCuenta } from "../api/auth-api";
-
+import {
+  registrarCuenta,
+} from "../api/auth-api";
 export { validateAuth } from "../model/auth-validation";
 
 type PasswordField = "password" | "confirmPassword";
@@ -60,6 +64,7 @@ export default function AuthForm({
   registering?: boolean;
 }) {
   const { colors: c } = useAppTheme();
+  const { login } = useAuthSession();
   const styles = createStyles(c);
   const headerHeight = useHeaderHeight();
 
@@ -136,13 +141,47 @@ export default function AuthForm({
 
     Keyboard.dismiss();
 
-    // El login se conectará en el paso 3.
+
+
     if (!registering) {
-      setNotice(
-        "El inicio de sesión se conectará en el siguiente paso."
-      );
+      submittingRef.current = true;
+      setSubmitting(true);
+
+      try {
+        await login(
+          values.email,
+          values.password
+        );
+
+        setValues((current) => ({
+          ...current,
+          password: "",
+          confirmPassword: "",
+        }));
+
+        setVisible({
+          password: false,
+          confirmPassword: false,
+        });
+
+        // Ahora la cuenta está disponible
+        // para el menú y para Mi perfil.
+        router.replace("/profile");
+      } catch (error) {
+        setNotice(
+          error instanceof Error
+            ? error.message
+            : "No fue posible iniciar sesión."
+        );
+      } finally {
+        submittingRef.current = false;
+        setSubmitting(false);
+      }
+
       return;
     }
+
+
 
     const displayName = [
       values.firstName,

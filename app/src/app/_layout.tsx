@@ -1,5 +1,8 @@
 
-import { useMemo } from "react";
+import {
+  useMemo,
+  type ReactNode,
+} from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   DarkTheme,
@@ -18,9 +21,18 @@ import {
 import { ProfileProvider } from "@/features/profile/state/profile-context";
 import { ReportDraftProvider } from "@/features/reports/state/report-draft-context";
 
+import {
+  AuthSessionProvider,
+  useAuthSession,
+} from "@/features/auth/state/auth-session-context";
+
 export const unstable_settings = {
   initialRouteName: "index",
 };
+
+
+
+
 
 function AppNavigator() {
   const { colors: c, mode, isDark } = useAppTheme();
@@ -46,52 +58,54 @@ function AppNavigator() {
     <ThemeProvider value={navigationTheme}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <ProfileProvider>
-        <ReportDraftProvider>
-          <Stack
-            screenOptions={{
-              headerTintColor: c.text,
-              headerStyle: {
-                backgroundColor: c.surface,
-              },
-              contentStyle: {
-                backgroundColor: c.surface,
-              },
-            }}
-          >
-            <Stack.Screen
-              name="index"
-              options={{ headerShown: false }}
-            />
+      <AuthSessionProvider>
+        <ProfileProvider>
+          <ReportDraftProvider>
+            <Stack
+              screenOptions={{
+                headerTintColor: c.text,
+                headerStyle: {
+                  backgroundColor: c.surface,
+                },
+                contentStyle: {
+                  backgroundColor: c.surface,
+                },
+              }}
+            >
+              <Stack.Screen
+                name="index"
+                options={{ headerShown: false }}
+              />
 
-            <Stack.Screen
-              name="login"
-              options={{ title: "Acceso" }}
-            />
+              <Stack.Screen
+                name="login"
+                options={{ title: "Acceso" }}
+              />
 
-            <Stack.Screen
-              name="register"
-              options={{ title: "Registro" }}
-            />
+              <Stack.Screen
+                name="register"
+                options={{ title: "Registro" }}
+              />
 
-            <Stack.Screen
-              name="profile"
-              options={{ title: "Perfil" }}
-            />
+              <Stack.Screen
+                name="profile"
+                options={{ title: "Perfil" }}
+              />
 
-            <Stack.Screen
-              name="create-report"
-              options={{ title: "Crear reporte" }}
-            />
+              <Stack.Screen
+                name="create-report"
+                options={{ title: "Crear reporte" }}
+              />
 
-            <Stack.Screen
-              name="case-detail"
-              options={{ title: "Detalle del reporte" }}
-            />
-          </Stack>
-        </ReportDraftProvider>
-      </ProfileProvider>
-    </ThemeProvider>
+              <Stack.Screen
+                name="case-detail"
+                options={{ title: "Detalle del reporte" }}
+              />
+            </Stack>
+          </ReportDraftProvider>
+        </ProfileProvider>
+      </AuthSessionProvider>
+    </ThemeProvider >
   );
 }
 
