@@ -119,13 +119,30 @@ export function ReportDateTimeField({
   function openPicker() {
     const initial = parsePickerValue(value, mode);
 
+
     if (Platform.OS === "android") {
       DateTimePickerAndroid.open({
         value: initial,
         mode,
-        is24Hour: true,
+
+        // Utilizar ruedas en lugar de calendario o reloj.
+        display: "spinner",
+
+        // Mantener formato de 24 horas.
+        is24Hour: false,
+
+        // Impedir seleccionar fechas futuras.
         maximumDate:
           mode === "date" ? new Date() : undefined,
+
+        positiveButton: {
+          label: "Aceptar",
+        },
+
+        negativeButton: {
+          label: "Cancelar",
+        },
+
         onChange: (event, selectedDate) => {
           if (
             event.type !== "set" ||
@@ -142,6 +159,7 @@ export function ReportDateTimeField({
 
       return;
     }
+
 
     setPending(initial);
     setOpen(true);
@@ -186,20 +204,30 @@ export function ReportDateTimeField({
           accessible={false}
         />
 
+
         <Text style={styles.value}>
           {value
             ? mode === "date"
-              ? parsePickerValue(value, mode)
-                  .toLocaleDateString("es-MX", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })
-              : `${value} h`
+              ? parsePickerValue(value, mode).toLocaleDateString(
+                "es-MX",
+                {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                }
+              )
+              : new Date(
+                `2000-01-01T${value}:00`
+              ).toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              })
             : mode === "date"
               ? "Seleccionar fecha"
               : "Seleccionar hora"}
         </Text>
+
 
         <Ionicons
           name="chevron-forward"
@@ -238,6 +266,7 @@ export function ReportDateTimeField({
                 value={pending}
                 mode={mode}
                 display="spinner"
+                is24Hour={false}
                 locale="es-MX"
                 maximumDate={
                   mode === "date"

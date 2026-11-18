@@ -220,16 +220,7 @@ export function ReportReviewStep(props: Props) {
         {summary("Redes", r.reporterSocial)}
         <Action secondary label="Editar contacto" onPress={() => edit(3)} />
       </View>
-      <Text style={s.body}>
-        Los datos de contacto servirían para gestionar el reporte y no
-        formarían parte de una ficha pública. Una eventual publicación de
-        información de la persona buscada requeriría una decisión aparte.
-        Esta vista previa no envía ni publica datos.
-      </Text>
-      <Text style={s.body}>
-        NLDMAP no registra denuncias oficiales, no inicia una búsqueda de
-        autoridad y no está conectado al RNPDNO.
-      </Text>
+
       <Action label="Enviar reporte" onPress={submit} />
     </>
   );

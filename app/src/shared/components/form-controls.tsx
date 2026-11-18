@@ -1,5 +1,12 @@
-
-import { useMemo, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from "react";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import {
   KeyboardAvoidingView,
@@ -156,67 +163,192 @@ export function useFormStyles() {
 export const formStyles = createFormStyles(lightPalette);
 
 
+export type FormErrorRequest = {
+  id: string;
+  attempt: number;
+};
+
+type RegisterFormTarget = (
+  id: string,
+  node: View | null
+) => void;
+
+const FormTargetsContext =
+  createContext<RegisterFormTarget | null>(null);
+
+export function FormErrorTarget({
+  id,
+  children,
+}: {
+  id: string;
+  children: ReactNode;
+}) {
+  const register = useContext(FormTargetsContext);
+
+  const setTarget = useCallback(
+    (node: View | null) => {
+      register?.(id, node);
+    },
+    [register, id]
+  );
+
+  return (
+    <View ref={setTarget} collapsable={false}>
+      {children}
+    </View>
+  );
+}
+
+
+
 export function FormScreen({
   children,
   header,
+  errorRequest,
 }: {
   children: ReactNode;
   header?: ReactNode;
+  errorRequest?: FormErrorRequest | null;
 }) {
   const s = useFormStyles();
   const headerHeight = useHeaderHeight();
 
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollOffset = useRef(0);
+
+  const targets = useRef(
+    new Map<string, View>()
+  );
+
+  const registerTarget = useCallback(
+    (id: string, node: View | null) => {
+      if (node) {
+        targets.current.set(id, node);
+      } else {
+        targets.current.delete(id);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!errorRequest) return;
+
+    let cancelled = false;
+
+    const frame = requestAnimationFrame(() => {
+      const scroll = scrollRef.current;
+      const target = targets.current.get(
+        errorRequest.id
+      );
+
+      if (!scroll || !target) return;
+
+      scroll.measureInWindow(
+        (_scrollX, scrollTop) => {
+          target.measureInWindow(
+            (_targetX, targetTop) => {
+              if (cancelled) return;
+
+              if (
+                !Number.isFinite(scrollTop) ||
+                !Number.isFinite(targetTop)
+              ) {
+                return;
+              }
+
+              const destination = Math.max(
+                0,
+                scrollOffset.current +
+                targetTop -
+                scrollTop -
+                16
+              );
+
+              scroll.scrollTo({
+                y: destination,
+                animated: true,
+              });
+            }
+          );
+        }
+      );
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
+  }, [errorRequest]);
+
   return (
-    <SafeAreaView
-      style={s.screen}
-      edges={["bottom", "left", "right"]}
-    >
-      {header && (
-        <View style={s.stickyHeader}>
-          <View
-            style={{
-              width: "100%",
-              maxWidth: 680,
-              alignSelf: "center",
+    <FormTargetsContext.Provider value={registerTarget}>
+      <SafeAreaView
+        style={s.screen}
+        edges={["bottom", "left", "right"]}
+      >
+        {header && (
+          <View style={s.stickyHeader}>
+            <View
+              style={{
+                width: "100%",
+                maxWidth: 680,
+                alignSelf: "center",
+              }}
+            >
+              {header}
+            </View>
+          </View>
+        )}
+
+        <KeyboardAvoidingView
+          style={s.screen}
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : "height"
+          }
+          keyboardVerticalOffset={headerHeight}
+        >
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={s.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            scrollEventThrottle={16}
+            onScroll={(event) => {
+              scrollOffset.current =
+                event.nativeEvent.contentOffset.y;
             }}
           >
-            {header}
-          </View>
-        </View>
-      )}
-
-      <KeyboardAvoidingView
-        style={s.screen}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={headerHeight}
-      >
-        <ScrollView
-          contentContainerStyle={s.content}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-        >
-          {children}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            {children}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </FormTargetsContext.Provider>
   );
 }
+
+
 
 
 export function Field({
   label,
   error,
+  fieldId,
   ...props
 }: TextInputProps & {
   label: string;
   error?: string;
+  fieldId?: string;
 }) {
   const s = useFormStyles();
   const { colors: c } = useAppTheme();
 
-  return (
+  const content = (
     <View style={s.field}>
       <Text style={s.label}>{label}</Text>
+
       <TextInput
         {...props}
         accessibilityLabel={label}
@@ -224,7 +356,9 @@ export function Field({
         placeholderTextColor={
           props.placeholderTextColor ?? c.muted
         }
-        selectionColor={props.selectionColor ?? c.action}
+        selectionColor={
+          props.selectionColor ?? c.action
+        }
         style={[
           s.input,
           props.multiline && s.multiline,
@@ -232,14 +366,27 @@ export function Field({
           props.style,
         ]}
       />
-      {error && (
-        <Text accessibilityRole="alert" style={s.error}>
+
+      {!!error && (
+        <Text
+          accessibilityRole="alert"
+          style={s.error}
+        >
           {error}
         </Text>
       )}
     </View>
   );
+
+  return fieldId ? (
+    <FormErrorTarget id={fieldId}>
+      {content}
+    </FormErrorTarget>
+  ) : (
+    content
+  );
 }
+
 
 export function Action({
   label,
@@ -279,20 +426,23 @@ export function Action({
   );
 }
 
+
 export function Choices({
   label,
   options,
   value,
   onChange,
+  fieldId,
 }: {
   label: string;
   options: readonly string[];
   value: string;
   onChange: (value: string) => void;
+  fieldId?: string;
 }) {
   const s = useFormStyles();
 
-  return (
+  const content = (
     <View style={s.field}>
       <Text style={s.label}>{label}</Text>
 
@@ -301,7 +451,9 @@ export function Choices({
           <Pressable
             key={option}
             accessibilityRole="radio"
-            accessibilityLabel={`${label}: ${option}`}
+            accessibilityLabel={
+              `${label}: ${option}`
+            }
             accessibilityState={{
               checked: value === option,
             }}
@@ -315,7 +467,8 @@ export function Choices({
             <Text
               style={[
                 s.label,
-                value === option && s.buttonText,
+                value === option &&
+                s.buttonText,
               ]}
             >
               {value === option ? "✓ " : ""}
@@ -326,4 +479,13 @@ export function Choices({
       </View>
     </View>
   );
+
+  return fieldId ? (
+    <FormErrorTarget id={fieldId}>
+      {content}
+    </FormErrorTarget>
+  ) : (
+    content
+  );
 }
+

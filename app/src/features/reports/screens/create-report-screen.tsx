@@ -10,6 +10,7 @@ import {
   Action,
   FormScreen,
   useFormStyles,
+  type FormErrorRequest,
 } from "@/shared/components/form-controls";
 import { ReportProgress } from "../components/report-progress";
 import { useProfile } from "@/features/profile/state/profile-context";
@@ -52,6 +53,8 @@ export default function CreateReportScreen() {
   }>();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [errorRequest, setErrorRequest] =
+    useState<FormErrorRequest | null>(null);
   useEffect(() => {
     setReport((current) => {
       const seeded = seedReport(current, profile);
@@ -71,6 +74,7 @@ export default function CreateReportScreen() {
   const back = useCallback(() => {
     setNotice(null);
     setErrors({});
+    setErrorRequest(null);
     if (step > 0) setStep(step - 1);
     else if (router.canGoBack()) router.back();
     else router.replace("/");
@@ -152,38 +156,81 @@ export default function CreateReportScreen() {
     const seeded = seedReport({ ...r, started: false }, profile);
     setReport(seeded);
     setErrors({});
+    setErrorRequest(null);
     setNotice("Datos del perfil copiados al borrador. Puedes corregirlos.");
   }
+
+  function showValidationErrors(
+    nextErrors: Record<string, string>
+  ) {
+    const keys = Object.keys(nextErrors);
+
+    if (keys.length === 0) return;
+
+    const firstError = keys[0];
+
+    setErrors(nextErrors);
+
+    setNotice(
+      `No se pudo continuar. Hay ${keys.length} ` +
+      `${keys.length === 1
+        ? "campo pendiente"
+        : "campos pendientes"}. ` +
+      `Primer problema: ${nextErrors[firstError]}`
+    );
+
+    setErrorRequest((previous) => ({
+      id: firstError,
+      attempt: (previous?.attempt ?? 0) + 1,
+    }));
+  }
+
+
   function next() {
     const nextErrors = reportErrors(r, step);
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) {
-      setNotice("Revisa los campos indicados antes de continuar.");
+
+    if (Object.keys(nextErrors).length > 0) {
+      showValidationErrors(nextErrors);
       return;
     }
+
+    setErrors({});
     setNotice(null);
+    setErrorRequest(null);
+
     setStep(step + 1);
   }
+
+
   function submit() {
     for (let index = 0; index < 4; index++) {
       const nextErrors = reportErrors(r, index);
-      if (Object.keys(nextErrors).length) {
+
+      if (Object.keys(nextErrors).length > 0) {
         setStep(index);
-        setErrors(nextErrors);
-        setNotice("Revisa los campos indicados.");
+        showValidationErrors(nextErrors);
         return;
       }
     }
-    setNotice("Campos comprobados. No se enviaron datos.");
+
+    setErrors({});
+    setErrorRequest(null);
+
+    setNotice(
+      "Campos comprobados. No se enviaron datos."
+    );
   }
+
   function edit(index: number) {
     setStep(index);
     setErrors({});
+    setErrorRequest(null);
     setNotice(null);
   }
   return (
     <FormScreen
       key={step}
+      errorRequest={errorRequest}
       header={
         <ReportProgress
           step={step}
