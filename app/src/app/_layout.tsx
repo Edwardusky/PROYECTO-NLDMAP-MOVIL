@@ -35,8 +35,7 @@ export const unstable_settings = {
 
 
 function AppNavigator() {
-  const { colors: c, mode, isDark } = useAppTheme();
-
+  const { colors: c, isDark } = useAppTheme();
   const navigationTheme = useMemo(() => {
     const base = isDark ? DarkTheme : DefaultTheme;
 
@@ -90,6 +89,11 @@ function AppNavigator() {
               <Stack.Screen
                 name="profile"
                 options={{ title: "Perfil" }}
+              />
+
+              <Stack.Screen
+                name="settings"
+                options={{ title: "Ajustes" }}
               />
 
               <Stack.Screen

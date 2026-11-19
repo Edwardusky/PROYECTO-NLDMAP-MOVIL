@@ -27,7 +27,8 @@ import {
 type AccountRoute =
   | "/login"
   | "/register"
-  | "/profile";
+  | "/profile"
+  | "/settings";
 
 type Props = {
   visible: boolean;
@@ -292,6 +293,11 @@ export function AccountDrawer({
                       />
                     </View>
                   )}
+                  <MenuOption
+                    icon="settings-outline"
+                    label="Ajustes"
+                    onPress={() => navigateAfterClose("/settings")}
+                  />
 
                   <MenuOption
                     icon="log-out-outline"
@@ -323,6 +329,12 @@ export function AccountDrawer({
                       navigateAfterClose("/register")
                     }
                   />
+                  <MenuOption
+                    icon="settings-outline"
+                    label="Ajustes"
+                    onPress={() => navigateAfterClose("/settings")}
+                  />
+
                 </>
               )}
             </View>

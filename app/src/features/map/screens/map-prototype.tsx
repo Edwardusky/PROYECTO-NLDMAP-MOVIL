@@ -45,7 +45,6 @@ export default function MapPrototype() {
   const {
     colors: c,
     isDark,
-    toggleTheme,
   } = useAppTheme();
 
   // Estilos que se actualizan al cambiar de tema.
@@ -166,28 +165,6 @@ export default function MapPrototype() {
             </View>
           </View>
 
-          {/* Tema claro / oscuro */}
-          <View style={styles.topActions}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={
-                isDark ? "Activar modo claro" : "Activar modo oscuro"
-              }
-              accessibilityState={{ selected: isDark }}
-              onPress={toggleTheme}
-              style={({ pressed }) => [
-                styles.topButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Ionicons
-                name={isDark ? "sunny-outline" : "moon-outline"}
-                size={24}
-                color={isDark ? "#F3D484" : c.text}
-                accessible={false}
-              />
-            </Pressable>
-          </View>
         </View>
 
         <Text style={[styles.body, { color: c.muted }]}>Aplicación móvil para gestión de reportes de personas no localizadas y desaparecidas
@@ -468,22 +445,6 @@ function createStyles(c: Palette) {
       flexShrink: 1,
     },
 
-    // Acciones de la derecha (tema claro / oscuro)
-    topActions: {
-      flexDirection: "row",
-      gap: 8,
-    },
-
-    topButton: {
-      minWidth: 56,
-      minHeight: 48,
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 6,
-      gap: 2,
-      borderRadius: 12,
-      backgroundColor: c.surfaceAlt,
-    },
 
     // Textos secundarios del encabezado
     body: {
