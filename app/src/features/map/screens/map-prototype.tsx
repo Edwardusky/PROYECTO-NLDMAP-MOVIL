@@ -39,6 +39,10 @@ import {
   MAP_STYLE_DARK,
 } from "@/features/map/constants/map";
 import { CASE_STATUSES, type CaseStatus } from "@/features/reports/model/case-status";
+import {
+  useAuthSession,
+} from "@/features/auth/state/auth-session-context";
+
 
 export default function MapPrototype() {
   // Tema centralizado de NLDMAP.
@@ -46,6 +50,8 @@ export default function MapPrototype() {
     colors: c,
     isDark,
   } = useAppTheme();
+
+  const { user } = useAuthSession();
 
   // Estilos que se actualizan al cambiar de tema.
   const styles = useMemo(
@@ -119,6 +125,56 @@ export default function MapPrototype() {
     );
   }
 
+  function requestReportAccess() {
+    Alert.alert(
+      "Necesitas una cuenta",
+      "Para crear un reporte debes iniciar sesión " +
+      "o registrarte en NLDMAP.",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Crear cuenta",
+          onPress: () => {
+            router.push({
+              pathname: "/register",
+              params: { next: "report" },
+            });
+          },
+        },
+        {
+          text: "Iniciar sesión",
+          onPress: () => {
+            router.push({
+              pathname: "/login",
+              params: { next: "report" },
+            });
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  }
+
+  function handleStartReport() {
+    if (!user) {
+      requestReportAccess();
+      return;
+    }
+
+    startSelection();
+  }
+
+  function handleContinueReport() {
+    if (!user) {
+      requestReportAccess();
+      return;
+    }
+
+    router.navigate("/create-report");
+  }
 
   return (
     <SafeAreaView
@@ -304,10 +360,8 @@ export default function MapPrototype() {
             !confirming &&
             !deviceLocation.loading
           }
-          onStartReport={startSelection}
-          onContinueReport={() => {
-            router.navigate("/create-report");
-          }}
+          onStartReport={handleStartReport}
+          onContinueReport={handleContinueReport}
           onConfirmLocation={confirmLocation}
           onCancelSelection={cancelSelection}
           onIndexChange={setSheetIndex}
@@ -325,10 +379,8 @@ export default function MapPrototype() {
             reportStarted={reportStarted}
             onConfirm={confirmLocation}
             onCancel={cancelSelection}
-            onStart={startSelection}
-            onContinue={() => {
-              router.navigate("/create-report");
-            }}
+            onStart={handleStartReport}
+            onContinue={handleContinueReport}
             onDiscard={confirmDiscardDraft}
           />
         </MapBottomSheet>

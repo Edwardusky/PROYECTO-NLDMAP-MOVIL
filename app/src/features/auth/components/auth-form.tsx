@@ -5,6 +5,7 @@ import {
   Link,
   router,
   useFocusEffect,
+  useLocalSearchParams,
 } from "expo-router"; import { useCallback, useRef, useState } from "react";
 import {
   Keyboard,
@@ -63,6 +64,11 @@ export default function AuthForm({
 }: {
   registering?: boolean;
 }) {
+  const { next } = useLocalSearchParams<{
+    next?: string;
+  }>();
+
+  const fromReport = next === "report";
   const { colors: c } = useAppTheme();
   const { login } = useAuthSession();
   const styles = createStyles(c);
@@ -166,7 +172,9 @@ export default function AuthForm({
 
         // Ahora la cuenta está disponible
         // para el menú y para Mi perfil.
-        router.replace("/profile");
+        router.replace(
+          fromReport ? "/create-report" : "/profile",
+        );
       } catch (error) {
         setNotice(
           error instanceof Error
@@ -210,7 +218,14 @@ export default function AuthForm({
       }));
 
       // El registro no inicia sesión automáticamente.
-      router.replace("/login");
+      if (fromReport) {
+        router.replace({
+          pathname: "/login",
+          params: { next: "report" },
+        });
+      } else {
+        router.replace("/login");
+      }
     } catch (error) {
       setNotice(
         error instanceof Error
@@ -254,6 +269,16 @@ export default function AuthForm({
       [field]: !current[field],
     }));
   }
+
+  const authSwitchHref = registering
+    ? {
+      pathname: "/login" as const,
+      params: fromReport ? { next: "report" } : {},
+    }
+    : {
+      pathname: "/register" as const,
+      params: fromReport ? { next: "report" } : {},
+    };
 
   return (
     <SafeAreaView
@@ -452,9 +477,7 @@ export default function AuthForm({
           </View>
 
           <Link
-            href={
-              registering ? "/login" : "/register"
-            }
+            href={authSwitchHref}
             replace
             asChild
           >

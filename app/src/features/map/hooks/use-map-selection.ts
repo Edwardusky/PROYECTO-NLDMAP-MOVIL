@@ -7,6 +7,10 @@ import { useReportDraft } from "@/features/reports/state/report-draft-context";
 import { seedReport } from "@/features/reports/model/report-draft";
 import { useDeviceLocation } from "./use-device-location";
 import { casesAtPoint, type MapCase } from "../utils/map-cases";
+import {
+  useAuthSession,
+} from "@/features/auth/state/auth-session-context";
+
 
 // Camera events, projection and confirmation share the same invalidation lifecycle.
 export function useMapSelection(visibleCases: MapCase[]) {
@@ -19,6 +23,12 @@ export function useMapSelection(visibleCases: MapCase[]) {
     editingLocation,
     setEditingLocation,
   } = useReportDraft();
+  const { user } = useAuthSession();
+
+  const currentUserId = useRef<string | null>(
+    user?.id ?? null,
+  );
+  currentUserId.current = user?.id ?? null;
   const cameraRef = useRef<CameraRef>(null);
   const [confirming, setConfirming] = useState(false);
   const [selectionError, setSelectionError] = useState<string | null>(null);
@@ -56,6 +66,9 @@ export function useMapSelection(visibleCases: MapCase[]) {
   });
 
   function startSelection() {
+    if (!currentUserId.current) {
+      return;
+    }
     operation.current += 1;
     setReport((current) => seedReport(current, profile));
     setEditingLocation(false);
@@ -110,6 +123,10 @@ export function useMapSelection(visibleCases: MapCase[]) {
   );
 
   async function confirmLocation() {
+    const reporterId = currentUserId.current;
+    if (!reporterId) {
+      return;
+    }
     if (
       !selecting ||
       busy.current !== null ||
@@ -131,6 +148,9 @@ export function useMapSelection(visibleCases: MapCase[]) {
         viewport.width / 2,
         viewport.height / 2,
       ]);
+      if (currentUserId.current !== reporterId) {
+        return;
+      }
       if (request !== operation.current) return;
       if (!coordinate.every(Number.isFinite) || Math.abs(coordinate[1]) > 90)
         throw new Error("Invalid coordinate");
