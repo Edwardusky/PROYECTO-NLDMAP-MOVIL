@@ -1,4 +1,6 @@
+
 import Ionicons from "@expo/vector-icons/Ionicons";
+
 import {
   useEffect,
   useMemo,
@@ -14,126 +16,127 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { Palette } from "@/shared/constants/palette";
 import { useAppTheme } from "@/shared/theme/app-theme-context";
-import {
-  useAuthSession,
-} from "@/features/auth/state/auth-session-context";
+import { useAuthSession } from "@/features/auth/state/auth-session-context";
 
-type AccountRoute =
-  | "/login"
-  | "/register"
-  | "/profile"
-  | "/settings";
+type AccountRoute = "/profile" | "/settings";
+
+type PendingAction =
+  | { type: "navigate"; route: AccountRoute }
+  | { type: "auth" }
+  | { type: "logout" };
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   onNavigate: (route: AccountRoute) => void;
+  onRequestAuth: () => void;
 };
 
-// Configuración de la animación.
-const DRAWER_TRAVEL = 340;
-const OPEN_DURATION = 220;
-const CLOSE_DURATION = 220;
+const OPEN_DURATION = 260;
+const CLOSE_DURATION = 240;
 
 export function AccountDrawer({
   visible,
   onClose,
   onNavigate,
+  onRequestAuth,
 }: Props) {
   const { colors: c } = useAppTheme();
   const { user, logout } = useAuthSession();
-
-  const [
-    accountExpanded,
-    setAccountExpanded,
-  ] = useState(false);
+  const { width } = useWindowDimensions();
 
   const styles = useMemo(
     () => createStyles(c),
     [c],
   );
 
-  // Mantiene el Modal visible durante
-  // la animación de salida.
   const [rendered, setRendered] = useState(visible);
 
-  // 0 = cerrado, 1 = abierto.
   const progress = useRef(
     new Animated.Value(visible ? 1 : 0),
   ).current;
 
-  // Permite navegar después de cerrar el panel.
-  const pendingRoute = useRef<AccountRoute | null>(null);
+  const pendingAction = useRef<PendingAction | null>(
+    null,
+  );
 
   const latestNavigate = useRef(onNavigate);
   latestNavigate.current = onNavigate;
 
-  // Montar el Modal al solicitar apertura.
+  const latestAuth = useRef(onRequestAuth);
+  latestAuth.current = onRequestAuth;
+
+  const latestLogout = useRef(logout);
+  latestLogout.current = logout;
+
   useEffect(() => {
     if (visible) {
-      pendingRoute.current = null;
+      pendingAction.current = null;
       setRendered(true);
     }
   }, [visible]);
 
-  // Animación de entrada y salida.
   useEffect(() => {
     if (!rendered) return;
 
     const animation = Animated.timing(progress, {
       toValue: visible ? 1 : 0,
-
       duration: visible
         ? OPEN_DURATION
         : CLOSE_DURATION,
-
       easing: visible
         ? Easing.out(Easing.cubic)
         : Easing.in(Easing.cubic),
-
       useNativeDriver: true,
     });
 
     animation.start(({ finished }) => {
       if (!finished || visible) return;
 
-      // Desmontar solo cuando terminó de cerrarse.
       setRendered(false);
 
-      // Ejecutar navegación pendiente.
-      const route = pendingRoute.current;
-      pendingRoute.current = null;
+      const action = pendingAction.current;
+      pendingAction.current = null;
 
-      if (route) {
-        latestNavigate.current(route);
+      if (action?.type === "navigate") {
+        latestNavigate.current(action.route);
+      } else if (action?.type === "auth") {
+        latestAuth.current();
+      } else if (action?.type === "logout") {
+        latestLogout.current();
       }
     });
 
-    return () => {
-      animation.stop();
-    };
+    return () => animation.stop();
   }, [visible, rendered, progress]);
 
-  // Desplazamiento horizontal del panel.
   const translateX = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [-DRAWER_TRAVEL, 0],
-  });
-
-  // Oscurecimiento progresivo del fondo.
-  const backdropOpacity = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
+    outputRange: [-width, 0],
   });
 
   function navigateAfterClose(route: AccountRoute) {
-    pendingRoute.current = route;
+    pendingAction.current = {
+      type: "navigate",
+      route,
+    };
+    onClose();
+  }
+
+  function requestAuthAfterClose() {
+    pendingAction.current = { type: "auth" };
+    onClose();
+  }
+
+  function logoutAfterClose() {
+    pendingAction.current = { type: "logout" };
     onClose();
   }
 
@@ -142,46 +145,24 @@ export function AccountDrawer({
       visible={rendered}
       transparent
       animationType="none"
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.root}>
-        {/* Fondo oscuro animado */}
         <Animated.View
-          pointerEvents="none"
           style={[
-            StyleSheet.absoluteFill,
+            styles.page,
             {
-              backgroundColor: c.overlay,
-              opacity: backdropOpacity,
+              transform: [{ translateX }],
             },
           ]}
-        />
-
-        {/* Cerrar tocando fuera del panel */}
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          accessible={false}
-          importantForAccessibility="no"
-          onPress={onClose}
-        />
-
-        <SafeAreaView
-          style={styles.safeArea}
-          edges={["top", "bottom", "left", "right"]}
-          pointerEvents="box-none"
+          accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
-          {/* Panel deslizable */}
-          <Animated.View
-            style={[
-              styles.drawer,
-              {
-                transform: [{ translateX }],
-              },
-            ]}
-            accessibilityViewIsModal
-            onAccessibilityEscape={onClose}
+          <SafeAreaView
+            style={styles.safeArea}
+            edges={["top", "bottom", "left", "right"]}
           >
-            {/* Encabezado */}
             <View style={styles.header}>
               <Text
                 accessibilityRole="header"
@@ -198,169 +179,110 @@ export function AccountDrawer({
               >
                 <Ionicons
                   name="close-outline"
-                  size={26}
+                  size={28}
                   color={c.text}
                   accessible={false}
                 />
               </Pressable>
             </View>
 
+            {user ? (
+              <View style={styles.identity}>
+                <Ionicons
+                  name="person-circle-outline"
+                  size={48}
+                  color={c.text}
+                  accessible={false}
+                />
 
-            {/* Opciones de cuenta */}
-            <View style={styles.options}>
-              {user ? (
-                <>
-                  {/* Identidad autenticada */}
-                  <View style={styles.identity}>
-                    <Ionicons
-                      name="person-circle-outline"
-                      size={44}
-                      color={c.text}
-                      accessible={false}
-                    />
-
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <Text style={styles.identityCaption}>
-                        Sesión iniciada
-                      </Text>
-
-                      <Text
-                        style={styles.identityName}
-                        numberOfLines={2}
-                      >
-                        {user.displayName}
-                      </Text>
-
-                      <Text
-                        style={styles.identityEmail}
-                        numberOfLines={1}
-                      >
-                        {user.email ?? "Sin correo"}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Desplegable */}
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Mi cuenta"
-                    accessibilityState={{
-                      expanded: accountExpanded,
-                    }}
-                    onPress={() =>
-                      setAccountExpanded((current) => !current)
-                    }
-                    style={styles.accountToggle}
-                  >
-                    <Ionicons
-                      name="person-outline"
-                      size={23}
-                      color={c.text}
-                      accessible={false}
-                    />
-
-                    <Text style={styles.accountToggleText}>
-                      Mi cuenta
-                    </Text>
-
-                    <Ionicons
-                      name={
-                        accountExpanded
-                          ? "chevron-up-outline"
-                          : "chevron-down-outline"
-                      }
-                      size={20}
-                      color={c.text}
-                      accessible={false}
-                    />
-                  </Pressable>
-
-                  {accountExpanded && (
-                    <View style={styles.submenu}>
-                      <MenuOption
-                        icon="person-circle-outline"
-                        label="Mi perfil"
-                        onPress={() =>
-                          navigateAfterClose("/profile")
-                        }
-                      />
-
-                      <MenuOption
-                        icon="albums-outline"
-                        label="Mis aportaciones (próximamente)"
-                        onPress={() => { }}
-                        disabled
-                      />
-                    </View>
-                  )}
-                  <MenuOption
-                    icon="settings-outline"
-                    label="Ajustes"
-                    onPress={() => navigateAfterClose("/settings")}
-                  />
-
-                  <MenuOption
-                    icon="log-out-outline"
-                    label="Cerrar sesión"
-                    onPress={() => {
-                      logout();
-                      onClose();
-                    }}
-                  />
-                </>
-              ) : (
-                <>
+                <View style={styles.identityContent}>
                   <Text style={styles.identityCaption}>
-                    Accede a tu cuenta de NLDMAP
+                    Sesión iniciada
                   </Text>
 
-                  <MenuOption
-                    icon="log-in-outline"
-                    label="Iniciar sesión"
-                    onPress={() =>
-                      navigateAfterClose("/login")
-                    }
-                  />
+                  <Text
+                    style={styles.identityName}
+                    numberOfLines={2}
+                  >
+                    {user.displayName}
+                  </Text>
 
-                  <MenuOption
-                    icon="person-add-outline"
-                    label="Registrarse"
-                    onPress={() =>
-                      navigateAfterClose("/register")
-                    }
-                  />
-                  <MenuOption
-                    icon="settings-outline"
-                    label="Ajustes"
-                    onPress={() => navigateAfterClose("/settings")}
-                  />
+                  <Text
+                    style={styles.identityEmail}
+                    numberOfLines={1}
+                  >
+                    {user.email ?? "Sin correo"}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.description}>
+                Consulta los reportes libremente.
+                Para acceder a tu perfil, inicia
+                sesión o crea una cuenta.
+              </Text>
+            )}
 
-                </>
+            <View style={styles.options}>
+              <MenuOption
+                icon="person-outline"
+                label="Mi perfil"
+                badge={!user ? "Registrarse" : undefined}
+                onPress={() => {
+                  if (user) {
+                    navigateAfterClose("/profile");
+                  } else {
+                    requestAuthAfterClose();
+                  }
+                }}
+              />
+
+              {user && (
+                <MenuOption
+                  icon="albums-outline"
+                  label="Mis aportaciones (próximamente)"
+                  disabled
+                  onPress={() => {}}
+                />
+              )}
+
+              <MenuOption
+                icon="settings-outline"
+                label="Ajustes"
+                onPress={() =>
+                  navigateAfterClose("/settings")
+                }
+              />
+
+              {user && (
+                <MenuOption
+                  icon="log-out-outline"
+                  label="Cerrar sesión"
+                  onPress={logoutAfterClose}
+                />
               )}
             </View>
-
 
             <Text style={styles.caption}>
               NLDMAP · 1.0.0
             </Text>
-          </Animated.View>
-        </SafeAreaView>
+          </SafeAreaView>
+        </Animated.View>
       </View>
     </Modal>
   );
 }
 
-
 function MenuOption({
   icon,
   label,
+  badge,
   onPress,
   disabled = false,
 }: {
-  icon: React.ComponentProps<
-    typeof Ionicons
-  >["name"];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
   label: string;
+  badge?: string;
   onPress: () => void;
   disabled?: boolean;
 }) {
@@ -369,18 +291,20 @@ function MenuOption({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={
+        badge ? `${label}. ${badge}` : label
+      }
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         {
-          minHeight: 52,
+          minHeight: 58,
           paddingHorizontal: 16,
           flexDirection: "row",
           alignItems: "center",
           gap: 12,
-          borderRadius: 12,
+          borderRadius: 14,
           backgroundColor: c.surfaceAlt,
           opacity: disabled ? 0.45 : 1,
         },
@@ -389,7 +313,7 @@ function MenuOption({
     >
       <Ionicons
         name={icon}
-        size={23}
+        size={24}
         color={c.text}
         accessible={false}
       />
@@ -397,17 +321,37 @@ function MenuOption({
       <Text
         style={{
           flex: 1,
+          color: c.text,
           fontSize: 16,
           fontWeight: "600",
-          color: c.text,
         }}
       >
         {label}
       </Text>
+
+      {badge && (
+        <View
+          style={{
+            backgroundColor: c.action,
+            borderRadius: 20,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+          }}
+        >
+          <Text
+            style={{
+              color: c.onAction,
+              fontSize: 12,
+              fontWeight: "700",
+            }}
+          >
+            {badge}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }
-
 
 function createStyles(c: Palette) {
   return StyleSheet.create({
@@ -416,22 +360,22 @@ function createStyles(c: Palette) {
       backgroundColor: "transparent",
     },
 
-    safeArea: {
-      flex: 1,
-      flexDirection: "row",
-    },
-
-    drawer: {
-      width: "85%",
-      maxWidth: 320,
+    page: {
+      width: "100%",
       height: "100%",
       backgroundColor: c.surface,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      gap: 24,
+    },
+
+    safeArea: {
+      flex: 1,
+      paddingHorizontal: 18,
+      paddingTop: 12,
+      paddingBottom: 12,
+      gap: 22,
     },
 
     header: {
+      minHeight: 54,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
@@ -441,9 +385,9 @@ function createStyles(c: Palette) {
     },
 
     title: {
-      color: c.text,
-      fontSize: 23,
+      fontSize: 24,
       fontWeight: "800",
+      color: c.text,
     },
 
     closeButton: {
@@ -453,18 +397,24 @@ function createStyles(c: Palette) {
       justifyContent: "center",
     },
 
-    options: {
-      gap: 10,
+    description: {
+      color: c.muted,
+      fontSize: 15,
+      lineHeight: 23,
     },
 
-
     identity: {
-      padding: 12,
-      borderRadius: 12,
-      backgroundColor: c.surfaceAlt,
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
+      gap: 12,
+      padding: 16,
+      borderRadius: 16,
+      backgroundColor: c.surfaceAlt,
+    },
+
+    identityContent: {
+      flex: 1,
+      gap: 4,
     },
 
     identityCaption: {
@@ -473,43 +423,24 @@ function createStyles(c: Palette) {
     },
 
     identityName: {
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: "700",
       color: c.text,
     },
 
     identityEmail: {
-      fontSize: 12,
+      fontSize: 13,
       color: c.muted,
     },
 
-    accountToggle: {
-      minHeight: 52,
-      paddingHorizontal: 16,
-      flexDirection: "row",
-      alignItems: "center",
+    options: {
       gap: 12,
-      borderRadius: 12,
-      backgroundColor: c.surfaceAlt,
     },
-
-    accountToggleText: {
-      flex: 1,
-      fontSize: 16,
-      fontWeight: "700",
-      color: c.text,
-    },
-
-    submenu: {
-      gap: 8,
-      marginLeft: 14,
-    },
-
 
     caption: {
       marginTop: "auto",
-      color: c.muted,
       fontSize: 12,
+      color: c.muted,
       paddingBottom: 12,
     },
   });

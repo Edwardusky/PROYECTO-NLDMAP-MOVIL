@@ -1,65 +1,39 @@
+import { useMemo, useState } from "react";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Camera, GeoJSONSource, Layer, Map } from "@maplibre/maplibre-react-native";
+
+import type { Palette } from "@/shared/constants/palette";
+import { useAppTheme } from "@/shared/theme/app-theme-context";
+import { useAuthSession } from "@/features/auth/state/auth-session-context";
+import { AuthEntrySheet } from "@/features/auth/components/auth-entry-sheet";
+import { useReportDraft } from "@/features/reports/state/report-draft-context";
+import { DEMO_CASES } from "@/features/reports/fixtures/demo-cases";
+import { CASE_STATUSES, type CaseStatus } from "@/features/reports/model/case-status";
 import { AccountDrawer } from "@/features/profile/components/account-drawer";
+
 import { useMapSelection } from "../hooks/use-map-selection";
 import { MapFooter } from "../components/map-footer";
 import { MapReportPopup } from "../components/map-report-popup";
 import { MapToolbar } from "../components/map-toolbar";
 import { MapCaseLayers } from "../components/map-case-layers";
 import { MapBottomSheet } from "../components/map-bottom-sheet";
-import {
-  getMapSheetSnapPoints,
-  type MapSheetIndex,
-} from "../utils/map-sheet-layout";
-import {
-  Camera,
-  GeoJSONSource,
-  Layer,
-  Map,
-} from "@maplibre/maplibre-react-native";
-import { useMemo, useState } from "react";
-import type { Palette } from "@/shared/constants/palette";
-import { useAppTheme } from "@/shared/theme/app-theme-context";
-import { router } from "expo-router";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { useReportDraft } from "@/features/reports/state/report-draft-context";
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { MapReportList } from "../components/map-report-list";
 import { MapFilterPanel, type FilterPanel } from "../components/map-filter-panel";
 import { filterCases } from "@/features/map/utils/map-cases";
-import { DEMO_CASES } from "@/features/reports/fixtures/demo-cases";
-import {
-  INITIAL_VIEW,
-  MAP_STYLE,
-  MAP_STYLE_DARK,
-} from "@/features/map/constants/map";
-import { CASE_STATUSES, type CaseStatus } from "@/features/reports/model/case-status";
-import {
-  useAuthSession,
-} from "@/features/auth/state/auth-session-context";
+import { getMapSheetSnapPoints, type MapSheetIndex } from "../utils/map-sheet-layout";
+import { INITIAL_VIEW, MAP_STYLE, MAP_STYLE_DARK } from "@/features/map/constants/map";
 
+type AuthPurpose = "report" | "profile";
 
 export default function MapPrototype() {
-  // Tema centralizado de NLDMAP.
-  const {
-    colors: c,
-    isDark,
-  } = useAppTheme();
-
+  const { colors: c, isDark } = useAppTheme();
   const { user } = useAuthSession();
-
-  // Estilos que se actualizan al cambiar de tema.
-  const styles = useMemo(
-    () => createStyles(c),
-    [c],
-  );
-
   const { discardDraft } = useReportDraft();
+
+  const styles = useMemo(() => createStyles(c), [c]);
 
   const [caseStatuses, setCaseStatuses] = useState<CaseStatus[]>([
     ...CASE_STATUSES,
@@ -67,26 +41,51 @@ export default function MapPrototype() {
   const [panel, setPanel] = useState<FilterPanel | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sheetIndex, setSheetIndex] =
-    useState<MapSheetIndex>(0);
+  const [authSheetOpen, setAuthSheetOpen] = useState(false);
+  const [authPurpose, setAuthPurpose] = useState<AuthPurpose>("report");
+  const [sheetIndex, setSheetIndex] = useState<MapSheetIndex>(0);
+
   const visibleCases = filterCases(DEMO_CASES, caseStatuses);
+
   const {
-    mapRef, cameraRef, viewport, resizeViewport,
-    mapReady, mapFailed, moving, confirming, selectionError,
-    selecting, reportStarted, selectedCases, selectedCoordinate, point, setSelection,
-    deviceLocation, startSelection, confirmLocation, cancelSelection, leaveSelection,
-    onRegionWillChange, onRegionDidChange, onDidFailLoadingMap, onDidFinishLoadingMap,
+    mapRef,
+    cameraRef,
+    viewport,
+    resizeViewport,
+    mapReady,
+    mapFailed,
+    moving,
+    confirming,
+    selectionError,
+    selecting,
+    reportStarted,
+    selectedCases,
+    selectedCoordinate,
+    point,
+    setSelection,
+    deviceLocation,
+    startSelection,
+    confirmLocation,
+    cancelSelection,
+    leaveSelection,
+    onRegionWillChange,
+    onRegionDidChange,
+    onDidFailLoadingMap,
+    onDidFinishLoadingMap,
   } = useMapSelection(visibleCases);
+
   const northTop = Math.min(80, viewport.height * 0.15);
-  const [compactHeight] = getMapSheetSnapPoints(
-    viewport.height
-  );
+  const [compactHeight] = getMapSheetSnapPoints(viewport.height);
+
   function toggleCaseStatus(status: CaseStatus) {
     const remaining = caseStatuses.includes(status)
       ? caseStatuses.filter((value) => value !== status)
       : [...caseStatuses, status];
-    if (!selectedCases.some((item) => remaining.includes(item.status)))
+
+    if (!selectedCases.some((item) => remaining.includes(item.status))) {
       setSelection(null);
+    }
+
     setCaseStatuses((current) =>
       current.includes(status)
         ? current.filter((item) => item !== status)
@@ -94,14 +93,13 @@ export default function MapPrototype() {
     );
   }
 
-
   function confirmDiscardDraft() {
     Alert.alert(
       "Descartar borrador",
       "¿Quieres descartar este borrador? " +
-      "Se perderán los datos capturados, " +
-      "la fotografía asociada y la ubicación " +
-      "seleccionada. Esta acción no se puede deshacer.",
+        "Se perderán los datos capturados, " +
+        "la fotografía asociada y la ubicación " +
+        "seleccionada. Esta acción no se puede deshacer.",
       [
         {
           text: "Conservar borrador",
@@ -111,46 +109,8 @@ export default function MapPrototype() {
           text: "Descartar",
           style: "destructive",
           onPress: () => {
-            // Invalida la selección pendiente del mapa.
             leaveSelection();
-
-            // Restablece el formulario y su estado.
             discardDraft();
-          },
-        },
-      ],
-      {
-        cancelable: true,
-      }
-    );
-  }
-
-  function requestReportAccess() {
-    Alert.alert(
-      "Necesitas una cuenta",
-      "Para crear un reporte debes iniciar sesión " +
-      "o registrarte en NLDMAP.",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Crear cuenta",
-          onPress: () => {
-            router.push({
-              pathname: "/register",
-              params: { next: "report" },
-            });
-          },
-        },
-        {
-          text: "Iniciar sesión",
-          onPress: () => {
-            router.push({
-              pathname: "/login",
-              params: { next: "report" },
-            });
           },
         },
       ],
@@ -158,36 +118,52 @@ export default function MapPrototype() {
     );
   }
 
+  // Una única entrada al panel de autenticación de NLDMAP.
+  function openAuthSheet(purpose: AuthPurpose) {
+    setAuthPurpose(purpose);
+    setAuthSheetOpen(true);
+  }
+
+  // Solicita autenticación antes de seleccionar la ubicación del reporte.
   function handleStartReport() {
     if (!user) {
-      requestReportAccess();
+      openAuthSheet("report");
       return;
     }
 
     startSelection();
   }
 
+  // Solicita autenticación antes de volver a un reporte sin terminar.
   function handleContinueReport() {
     if (!user) {
-      requestReportAccess();
+      openAuthSheet("report");
       return;
     }
 
     router.navigate("/create-report");
   }
 
+  function openAuthRoute(route: "/login" | "/register") {
+    setAuthSheetOpen(false);
+
+    if (authPurpose === "report") {
+      router.push({
+        pathname: route,
+        params: { next: "report" },
+      });
+    } else {
+      router.push(route);
+    }
+  }
+
   return (
     <SafeAreaView
-      style={[
-        styles.screen,
-        { backgroundColor: c.surfaceAlt },
-      ]}
+      style={[styles.screen, { backgroundColor: c.surfaceAlt }]}
       edges={["top", "bottom", "left", "right"]}
     >
       <View style={styles.header}>
-
         <View style={styles.topRow}>
-          {/* Menú y logotipo */}
           <View style={styles.headerLeft}>
             <Pressable
               accessibilityRole="button"
@@ -207,7 +183,6 @@ export default function MapPrototype() {
               />
             </Pressable>
 
-            {/* Logotipo NLDMAP */}
             <View
               style={styles.brand}
               accessible
@@ -216,16 +191,17 @@ export default function MapPrototype() {
               <View style={styles.brandBox}>
                 <Text style={styles.brandLetter}>N</Text>
               </View>
-
               <Text style={styles.title}>LDMAP</Text>
             </View>
           </View>
-
         </View>
 
-        <Text style={[styles.body, { color: c.muted }]}>Aplicación móvil para gestión de reportes de personas no localizadas y desaparecidas
+        <Text style={styles.body}>
+          Aplicación móvil para gestión de reportes de personas no
+          localizadas y desaparecidas
         </Text>
       </View>
+
       <View
         style={styles.viewport}
         onLayout={(event) => {
@@ -238,10 +214,7 @@ export default function MapPrototype() {
           style={StyleSheet.absoluteFill}
           mapStyle={isDark ? MAP_STYLE_DARK : MAP_STYLE}
           attribution
-          attributionPosition={{
-            top: 12,
-            left: 12,
-          }}
+          attributionPosition={{ top: 12, left: 12 }}
           compass
           compassPosition={{ top: northTop, right: 24 }}
           onRegionWillChange={onRegionWillChange}
@@ -253,7 +226,6 @@ export default function MapPrototype() {
           }}
         >
           <Camera ref={cameraRef} initialViewState={INITIAL_VIEW} />
-          {/* Only existing country geometry. This source has no state boundaries. */}
 
           <MapCaseLayers
             visibleCases={visibleCases}
@@ -261,7 +233,6 @@ export default function MapPrototype() {
             onSelect={setSelection}
           />
 
-          {/* Ubicación personal obtenida del GPS */}
           {deviceLocation.coordinate && (
             <GeoJSONSource
               id="device-location"
@@ -274,7 +245,6 @@ export default function MapPrototype() {
                 },
               }}
             >
-              {/* Halo azul alrededor de la ubicación */}
               <Layer
                 id="device-location-halo"
                 type="circle"
@@ -284,8 +254,6 @@ export default function MapPrototype() {
                   "circle-opacity": 0.18,
                 }}
               />
-
-              {/* Punto central azul con contorno blanco */}
               <Layer
                 id="device-location-point"
                 type="circle"
@@ -298,14 +266,17 @@ export default function MapPrototype() {
               />
             </GeoJSONSource>
           )}
-
         </Map>
+
         {selecting && (
           <View
             pointerEvents="none"
             style={[
               styles.target,
-              { left: viewport.width / 2 - 18, top: viewport.height / 2 - 18 },
+              {
+                left: viewport.width / 2 - 18,
+                top: viewport.height / 2 - 18,
+              },
             ]}
             accessible
             accessibilityLabel="Indicador central de ubicación elegida manualmente"
@@ -313,6 +284,7 @@ export default function MapPrototype() {
             <View style={styles.targetDot} />
           </View>
         )}
+
         {point &&
           selectedCoordinate &&
           panel === null &&
@@ -325,9 +297,15 @@ export default function MapPrototype() {
               viewport={viewport}
               selectedCases={selectedCases}
               onClose={() => setSelection(null)}
-              onOpenReport={(id) => router.push({ pathname: "/case-detail", params: { id } })}
+              onOpenReport={(id) =>
+                router.push({
+                  pathname: "/case-detail",
+                  params: { id },
+                })
+              }
             />
           )}
+
         {!selecting && sheetIndex === 0 && (
           <MapToolbar
             height={viewport.height}
@@ -384,7 +362,6 @@ export default function MapPrototype() {
             onDiscard={confirmDiscardDraft}
           />
         </MapBottomSheet>
-
       </View>
 
       <MapFilterPanel
@@ -393,13 +370,13 @@ export default function MapPrototype() {
         caseStatuses={caseStatuses}
         onToggleCase={toggleCaseStatus}
       />
+
       <MapReportList
         visible={listOpen}
         cases={visibleCases}
         onClose={() => setListOpen(false)}
         onOpenReport={(id) => {
           setListOpen(false);
-
           router.push({
             pathname: "/case-detail",
             params: { id },
@@ -415,45 +392,43 @@ export default function MapPrototype() {
           leaveSelection();
           router.push(route);
         }}
+        onRequestAuth={() => openAuthSheet("profile")}
       />
 
+      <AuthEntrySheet
+        visible={authSheetOpen}
+        purpose={authPurpose}
+        onClose={() => setAuthSheetOpen(false)}
+        onLogin={() => openAuthRoute("/login")}
+        onRegister={() => openAuthRoute("/register")}
+      />
     </SafeAreaView>
   );
 }
 
-
 function createStyles(c: Palette) {
   return StyleSheet.create({
-    // Contenedor principal
     screen: {
       flex: 1,
       backgroundColor: c.surface,
     },
-
-    // Encabezado
     header: {
       paddingHorizontal: 16,
       paddingVertical: 8,
       gap: 2,
     },
-
-    // Distribución horizontal del encabezado
     topRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       gap: 8,
     },
-
-    // Grupo izquierdo: menú hamburguesa + logotipo
     headerLeft: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
       flexShrink: 1,
     },
-
-    // Botón de menú hamburguesa
     menuButton: {
       width: 48,
       height: 48,
@@ -462,16 +437,12 @@ function createStyles(c: Palette) {
       borderRadius: 12,
       backgroundColor: c.surfaceAlt,
     },
-
-    // Logotipo completo NLDMAP
     brand: {
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
       flexShrink: 1,
     },
-
-    // Recuadro redondeado de la N
     brandBox: {
       width: 36,
       height: 36,
@@ -481,44 +452,27 @@ function createStyles(c: Palette) {
       alignItems: "center",
       justifyContent: "center",
     },
-
-    // Letra N
     brandLetter: {
       color: c.text,
       fontSize: 22,
       fontWeight: "800",
     },
-
-    // Texto LDMAP
     title: {
       color: c.text,
       fontSize: 21,
       fontWeight: "800",
       flexShrink: 1,
     },
-
-
-    // Textos secundarios del encabezado
     body: {
       color: c.muted,
       fontSize: 12,
       lineHeight: 18,
     },
-
-    caption: {
-      color: c.muted,
-      fontSize: 11,
-      lineHeight: 16,
-    },
-
-    // Contenedor del mapa
     viewport: {
       flex: 1,
       overflow: "hidden",
       backgroundColor: c.mapPlaceholder,
     },
-
-    // Indicador central al elegir ubicación de un reporte
     target: {
       position: "absolute",
       width: 36,
@@ -527,21 +481,15 @@ function createStyles(c: Palette) {
       borderWidth: 3,
       borderColor: c.draft,
       backgroundColor: "#FFFFFF99",
-      alignItems: "center",
-      justifyContent: "center",
     },
-
     targetDot: {
       width: 6,
       height: 6,
       borderRadius: 3,
       backgroundColor: c.draft,
     },
-
-    // Retroalimentación visual al presionar botones
     pressed: {
       opacity: 0.7,
     },
   });
 }
-

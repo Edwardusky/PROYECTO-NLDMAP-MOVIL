@@ -210,8 +210,23 @@ export function MapBottomSheet({
         </View>
       </GestureDetector>
 
+
       {/* Resumen permanente */}
-      <View style={styles.summaryRow}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={
+          `Cambiar altura del panel. ` +
+          `Estado actual: ${stateName}`
+        }
+        accessibilityHint={
+          "Toca para alternar entre compacto, intermedio y expandido"
+        }
+        onPress={cycleHeight}
+        style={({ pressed }) => [
+          styles.summaryRow,
+          pressed && { opacity: 0.75 },
+        ]}
+      >
         <View style={styles.summaryText}>
           <Text
             numberOfLines={1}
@@ -226,32 +241,8 @@ export function MapBottomSheet({
             {visibleCount} reportes visibles
           </Text>
         </View>
+      </Pressable>
 
-        {/* Alternativa accesible al gesto */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
-            `Cambiar altura del panel. ` +
-            `Estado actual: ${stateName}`
-          }
-          accessibilityHint={
-            "Alterna entre compacto, intermedio y expandido"
-          }
-          onPress={cycleHeight}
-          style={styles.expandButton}
-        >
-          <Ionicons
-            name={
-              index === 2
-                ? "chevron-down-outline"
-                : "chevron-up-outline"
-            }
-            size={24}
-            color={c.text}
-            accessible={false}
-          />
-        </Pressable>
-      </View>
 
       {/* Acciones rápidas del modo compacto */}
       {index === 0 && (
@@ -271,7 +262,7 @@ export function MapBottomSheet({
                   styles.quickButton,
                   styles.flex,
                   !canConfirmLocation &&
-                    styles.disabled,
+                  styles.disabled,
                 ]}
               >
                 <Text
@@ -393,12 +384,6 @@ function createStyles(c: Palette) {
       fontSize: 12,
     },
 
-    expandButton: {
-      width: 44,
-      height: 44,
-      alignItems: "center",
-      justifyContent: "center",
-    },
 
     quickActions: {
       flexDirection: "row",

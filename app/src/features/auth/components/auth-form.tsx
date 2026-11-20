@@ -173,7 +173,7 @@ export default function AuthForm({
         // Ahora la cuenta está disponible
         // para el menú y para Mi perfil.
         router.replace(
-          fromReport ? "/create-report" : "/profile",
+          fromReport ? "/create-report" : "/",
         );
       } catch (error) {
         setNotice(
